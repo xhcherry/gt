@@ -41,60 +41,65 @@ local textnotify={
     "在尘埃落定前奋力一搏",
 }
 
-local name = PLAYER.GET_PLAYER_NAME(players.user())
-function welcomehb()
-    welcome388 = "至臻皇榜 "
-    welcomevip = "近来可好，"
-    welcomestand = "欢迎 "
 
-    for _,id in ipairs(sxid) do
-        if name == id.playeridx then
-            return welcome388
+
+        local name = PLAYER.GET_PLAYER_NAME(players.user())
+        function welcomehb()
+            welcome388 = "至臻皇榜 "
+            welcomevip = "近来可好，"
+            welcomestand = "欢迎 "
+
+            for _, id in ipairs(sxid) do
+                if name == id.playeridx then
+                    return welcome388
+                end
+            end
+
+            for _, id in ipairs(spid) do
+                if name == id.playerid then
+                    return welcomevip
+                end
+            end
+
+            return welcomestand
+
         end
-    end
 
-    for _, id in ipairs(spid) do
-        if name == id.playerid then
-            return welcomevip
-        end
-    end
+        random_notify = math.random(1, #textnotify)
 
-    return welcomestand
-end
+        welcomet1 = menu.toggle_loop(players_root, "你看不到", {"ucantseeit"}, "", function()
+            if name == "Mag7777V" or name == "Magicswordstar" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "佳佳 驾到")
+            elseif name == "Gods_daxiong" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "明月 驾到")
+            elseif name == "An_owQ" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "安安 驾到")
+            elseif name == "hinrcituqzQZ" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "清歌 驾到")
+            elseif name == "XiaoYuXin_qwq" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "小雨 驾到")
+            elseif name == "chen_you123" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "辰悠 驾到")
+            else
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. PLAYER.GET_PLAYER_NAME(players.user()))
+            end
+        end)
 
-random_notify = math.random(1,#textnotify)
+        welcomet2 = menu.toggle_loop(players_root, "你看不到", {"youcantseeit"}, "", function()
+            menu.trigger_commands("ucantseeit on")
+            wait(1000)
+            menu.trigger_commands("ucantseeit off")
+            menu.trigger_commands("youcantseeit off")
+        end)
 
-welcomet1 = menu.toggle_loop(players_root, "你看不到", {"ucantseeit"}, "", function ()
-    if name == "Mag7777V" or name == "Magicswordstar" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."佳佳 驾到")
-    elseif name == "Gods_daxiong" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."明月 驾到")
-    elseif name == "An_owQ" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."安安 驾到")
-    elseif name == "hinrcituqzQZ" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."清歌 驾到")
-    elseif name == "XiaoYuXin_qwq" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."小雨 驾到")
-    elseif name == "chen_you123" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."辰悠 驾到")
-    else
-        notification(textnotify[random_notify] .. "\n"..welcomehb()..PLAYER.GET_PLAYER_NAME(players.user()))
-    end
-end)
+        menu.trigger_commands("youcantseeit on")
+        menu.set_visible(welcomet1, false)
+        menu.set_visible(welcomet2, false)
 
-welcomet2 = menu.toggle_loop(players_root, "你看不到", {"youcantseeit"}, "", function ()
-    menu.trigger_commands("ucantseeit on")
-    wait(1000)
-    menu.trigger_commands("ucantseeit off")
-    menu.trigger_commands("youcantseeit off")
-end)
 
-menu.trigger_commands("youcantseeit on")
-menu.set_visible(welcomet1, false)
-menu.set_visible(welcomet2, false)
 
 function realheart()
-notification("")
+    notification("")
 end
 
 local wennuan={
