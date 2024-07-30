@@ -19,7 +19,7 @@ GTluaScript = menu GT = GTluaScript.list GTAC = GTluaScript.action GTD = GTluaSc
 GTLP = GTluaScript.toggle_loop GTTG = GTluaScript.toggle GTH = GTluaScript.hyperlink GTS = menu.textslider gtlog = util.log
 new = {} Ini = {}
 --
-GT_version = '7.17'
+GT_version = '7.30'
 translations = {}
 setmetatable(translations, {
     __index = function (self, key)
@@ -27,7 +27,7 @@ setmetatable(translations, {
     end
 })
 function updatelogs()
-    drawnotify("现可在Stand 116.9版本正常使用\n崩溃选项>推荐选项>子是父的威\n优化了邪魔之眼的待机动作效果\n优化了启动Lua连接速度和稳定性\n对此版本进行许多的错误改进\n[Ultra]>RIP Something[崩溃]")
+    drawnotify("更新了邪魔之眼的效果\n玩家选项>丝滑传送[标点自动传送]\n自我选项>自我娱乐>新型娱乐>暗影神斧\n自我选项>自我娱乐>新型娱乐>御剑围绕\n载具选项>载具玩乐>普通鹿车\n载具选项>载具玩乐>圣诞鹿车\n载具选项>载具玩乐>老弱车\n载具选项>载具玩乐>拉力猫\n载具选项>载具玩乐>遥控RC\n恶搞选项>近期更新>天基炮玩家\n恶搞选项>近期更新>可汉贾利攻击\n恶搞选项>近期更新>炮塔攻击\n武器选项>新枪械玩法>可活跃吸附枪\n细微错误改进和优化")
 end
 --
 hasShownToast = false
@@ -39,12 +39,12 @@ currentDay = tonumber(os.date("%d"))
 
 notifyYear = 2024
 notifyMonth = 7
-notifyDay = 16
+notifyDay = 30
 
 _G.daysSince = _G.daysSince or 0
 
-if GT_version ~= Cloud_version then
-    util.toast("请将GTLua更新到最新版本以继续使用\n您的版本："..GT_version.."\n最新版本："..Cloud_version)
+if GT_version < Cloud_version then
+    util.toast("此版本已不受支持\n请将GTLua更新到最新版本以继续使用\nGTLua 文件6群：961675430\n您的版本："..GT_version.."\n最新版本："..Lastest_version)
     util.stop_script()
 end
 
@@ -6447,6 +6447,520 @@ end
 
 --杂项
 -- 原创功能 缝合死妈
+function laoying(on)
+    if on then
+        local feiying = 2864127842
+        local mycoords = players.get_position(players.user())
+        request_model(feiying)
+        fly = CreatePed(26, feiying, mycoords, 0)
+        MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(mycoords.x, mycoords.y, mycoords.z, 
+        mycoords.x, mycoords.y, mycoords.z, 1, true, 0xDBBD7280, players.user_ped(), true, false, 1)
+        util.create_tick_handler(function()
+            local playerPed = players.user_ped()
+            local camRot = CAM.GET_FINAL_RENDERED_CAM_ROT(2)
+            local behindCoords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerPed, 0.0, -0.5, 0.3)
+
+            ENTITY.SET_ENTITY_COLLISION(fly, false, false)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(fly, behindCoords.x, behindCoords.y, behindCoords.z, false, false, false)
+            ENTITY.SET_ENTITY_ROTATION(fly, camRot.x + 25, camRot.y, camRot.z, 2, true)
+        end)
+    else
+        entities.delete_by_handle(fly)
+    end
+end
+--
+镜头高度 = 10
+function 启用镜头(pid)
+    local 玩家位置 = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+    玩家镜头 = CAM.CREATE_CAM_WITH_PARAMS("DEFAULT_SCRIPTED_CAMERA", 
+        玩家位置.x, 玩家位置.y, 玩家位置.z + 镜头高度, 
+        0.0, 0.0, 0.0, 200.0, true, true)
+    CAM.SET_CAM_ACTIVE(玩家镜头, true)
+    CAM.RENDER_SCRIPT_CAMS(true, true, 1000, true, true, 0)
+    while true do
+        if PAD.IS_CONTROL_PRESSED(0, 36) then  -- Ctrl键
+            镜头高度 = 镜头高度 - 0.1  
+        end
+        if PAD.IS_CONTROL_PRESSED(0, 22) then  -- 空格键
+            镜头高度 = 镜头高度 + 0.1  
+        end
+
+        玩家位置 = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+        local 游戏镜头旋转 = CAM.GET_GAMEPLAY_CAM_ROT(2)
+        CAM.SET_CAM_COORD(玩家镜头, 玩家位置.x, 玩家位置.y, 玩家位置.z + 镜头高度)
+        CAM.SET_CAM_ROT(玩家镜头, 游戏镜头旋转.x, 游戏镜头旋转.y, 游戏镜头旋转.z, 2)
+        wait()
+    end
+end
+
+function 禁用镜头()
+    if 玩家镜头 ~= nil then
+        CAM.SET_CAM_ACTIVE(玩家镜头, false)
+        CAM.DESTROY_CAM(玩家镜头, true)
+        CAM.RENDER_SCRIPT_CAMS(false, true, 1000, true, true, 0)
+        玩家镜头 = nil
+    end
+end
+--
+function is_loading_into_session()
+    return memory.read_int(memory.script_global(1574988)) == 66 or not PLAYER.IS_PLAYER_CONTROL_ON(players.user())
+end
+
+function is_player_passive(pid)
+    return memory.read_int(memory.script_global(1892703 + (pid * 599 + 1) + 8)) == 1
+end
+
+TraceFlag =
+{
+	everything = 4294967295,
+	none = 0,
+	world = 1,
+	vehicles = 2,
+	pedsSimpleCollision = 4,
+	peds = 8,
+	objects = 16,
+	water = 32,
+	foliage = 256,
+}
+
+function get_offset_from_cam(dist)
+	local rot = CAM.GET_FINAL_RENDERED_CAM_ROT(2)
+	local pos = CAM.GET_FINAL_RENDERED_CAM_COORD()
+	local dir = rot:toDir()
+	dir:mul(dist)
+	local offset = v3.new(pos)
+	offset:add(dir)
+	return offset
+end
+
+function get_raycast_result(dist, flag)
+	local result = {}
+	flag = flag or TraceFlag.everything
+	local didHit = memory.alloc(1)
+	local endCoords = v3.new()
+	local normal = v3.new()
+	local hitEntity = memory.alloc_int()
+	local camPos = CAM.GET_FINAL_RENDERED_CAM_COORD()
+	local offset = get_offset_from_cam(dist)
+
+	local handle = SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
+		camPos.x, camPos.y, camPos.z,
+		offset.x, offset.y, offset.z,
+		flag,
+		players.user_ped(), 7
+	)
+	SHAPETEST.GET_SHAPE_TEST_RESULT(handle, didHit, endCoords, normal, hitEntity)
+
+	result.didHit = memory.read_byte(didHit) ~= 0
+	result.endCoords = endCoords
+	result.surfaceNormal = normal
+	result.hitEntity = memory.read_int(hitEntity)
+	return result
+end
+--
+numDaggers = 6  
+daggers = {} 
+daggerParams = {} 
+fireRate = 0.5  
+function initDaggerParams()
+    daggerParams = {}  
+    for i = 1, numDaggers do
+        daggerParams[i] = {
+            angle = math.random() * 2 * math.pi,  
+            radius = 0.6 + math.random() * 0.3,  
+            speed = 0.01 + math.random() * 0.05,  
+            zSpeed = 0.01 + math.random() * 0.01,  
+            rotationSpeed = 1.0 + math.random() * 2.0  
+        }
+    end
+end
+
+function shootDagger()
+    local playerCoords = players.get_position(players.user())
+    local forwardVector = ENTITY.GET_ENTITY_FORWARD_VECTOR(players.user_ped())
+    local shootPos = v3.new(playerCoords.x, playerCoords.y, playerCoords.z)
+    shootPos = v3.add(shootPos, v3.mul(forwardVector, 2.0))  
+    if #daggers > 0 then
+        local dagger = table.remove(daggers, 1)  
+        if dagger and ENTITY.DOES_ENTITY_EXIST(dagger) then
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(dagger, v3.getX(shootPos), v3.getY(shootPos), v3.getZ(shootPos), false, false, false)
+            local rotation = v3.lookAt(shootPos, playerCoords)
+            ENTITY.SET_ENTITY_ROTATION(dagger, v3.getX(rotation), v3.getY(rotation), v3.getZ(rotation), 2, true)
+            local speed = 50.0  
+            local forwardSpeed = v3.mul(forwardVector, speed)
+            local totalVelocity = forwardSpeed  
+            ENTITY.SET_ENTITY_VELOCITY(dagger, v3.getX(totalVelocity), v3.getY(totalVelocity), v3.getZ(totalVelocity))
+            daggerParams[#daggerParams + 1] = {
+                angle = 0, 
+                radius = 0.6 + math.random() * 0.3,  
+                speed = 0.01 + math.random() * 0.05,  
+                zSpeed = 0.01 + math.random() * 0.01, 
+                rotationSpeed = 1.0 + math.random() * 2.0 
+            }
+        end
+    end
+end
+
+function load_dark_axe(开关)
+    变量 = 开关
+    local angle = 0
+    local rotation_speed = 0.02 
+    local move_speed = 0.05  
+    local move_direction = 1 
+    local generated = false
+    local holding = false  
+    local thrown = false  
+    local throw_time = 0  
+    local delay = 100
+
+    local give_weapon_to_ped = function()
+        WEAPON.GIVE_WEAPON_TO_PED(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), 1317494643, 15, true, true)
+        WEAPON.SET_PED_CURRENT_WEAPON_VISIBLE(players.user_ped(), 0, 0, 0, 0)
+    end
+
+    local remove_weapon_from_ped = function()
+        WEAPON.REMOVE_WEAPON_FROM_PED(players.user_ped(), 1317494643)
+    end
+
+    local create_axe = function(pos)
+        local axe = entities.create_object(util.joaat("prop_ld_fireaxe"), pos)
+        return {axe}
+    end
+
+    local delete_axe = function(axes)
+        for _, axe in ipairs(axes) do
+            ENTITY.DETACH_ENTITY(axe, true, true)
+            ENTITY.SET_ENTITY_AS_MISSION_ENTITY(axe, true, true)
+            entities.delete_by_handle(axe)
+        end
+    end
+
+    if 变量 then
+        while 变量 do
+            local pos = players.get_position(players.user())
+            local right_hand_bone = PED.GET_PED_BONE_INDEX(players.user_ped(), 57005)
+            if not generated then
+                Axes = create_axe(pos)
+                generated = true
+            end
+            if PAD.IS_CONTROL_JUST_PRESSED(0, 25) then 
+                if not holding then
+                    give_weapon_to_ped()
+                    ENTITY.ATTACH_ENTITY_TO_ENTITY(Axes[1], players.user_ped(), right_hand_bone, 0.08, 0, -0.02, -100, -180, -10, true, false, true, false, 0, true)
+                    holding = true
+                else
+                    remove_weapon_from_ped()
+                    delete_axe(Axes)
+                    Axes = nil
+                    generated = false
+                    holding = false
+                    thrown = false 
+                end
+            elseif PAD.IS_CONTROL_JUST_RELEASED(38, 38) then
+                if Axes and holding then
+                    request_anim("melee@unarmed@streamed_core")
+                    TASK.TASK_PLAY_ANIM(players.user_ped(), "melee@unarmed@streamed_core", "heavy_punch_a", 8.0, 8.0, -1, 0, 0.3, false, false, false)
+                    ENTITY.DETACH_ENTITY(Axes[1])
+                    ENTITY.SET_ENTITY_COLLISION(Axes[1], true, false)
+                    ENTITY.SET_ENTITY_DYNAMIC(Axes[1], true)
+                    ENTITY.SET_ENTITY_MAX_SPEED(Axes[1], 100.0)
+                    local camrot = CAM.GET_FINAL_RENDERED_CAM_ROT(0)
+                    ENTITY.SET_ENTITY_ROTATION(Axes[1], camrot.x, camrot.y, camrot.z, 1, false)
+                    ENTITY.APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(Axes[1], 1, 60, 2000, 100, true, true, true, true)
+                    thrown = true  
+                    throw_time = util.current_time_millis()  
+                end
+            elseif thrown then  
+                if util.current_time_millis() - throw_time > delay then 
+                    if ENTITY.HAS_ENTITY_COLLIDED_WITH_ANYTHING(Axes[1]) then
+                        local axe_pos = ENTITY.GET_ENTITY_COORDS(Axes[1])
+                        FIRE.ADD_EXPLOSION(axe_pos.x, axe_pos.y, axe_pos.z, 2, 1.0, true, false, 1.0)
+                        delete_axe(Axes)
+                        Axes = nil
+                        generated = false
+                        holding = false
+                        thrown = false 
+                    end
+                end
+            else
+                if Axes and not holding then
+                    request_ptfx_asset("scr_sum2_hal")
+                    GRAPHICS.USE_PARTICLE_FX_ASSET("scr_sum2_hal")
+
+                    angle = angle + rotation_speed
+                    local offsetX = math.cos(angle) * 1.5
+                    local offsetY = math.sin(angle) * 1.5
+                    local offsetZ = math.sin(angle * 2) * 0.3 * move_direction  
+                    local newPos = {x = pos.x + offsetX, y = pos.y + offsetY, z = pos.z + offsetZ}
+
+                    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
+                        "scr_sum2_hal_rider_weak_orange", Axes[1], 0, 0, offsetZ + 0.3, 0, 0, 0, 0.2, 0, 0, 0
+                    )
+                    ENTITY.SET_ENTITY_COLLISION(Axes[1], false, false)
+                    ENTITY.SET_ENTITY_COORDS_NO_OFFSET(Axes[1], newPos.x, newPos.y, newPos.z, false, false, false)
+
+                    local rotX = 0
+                    local rotY = math.sin(angle) * 3 
+                    local rotZ = math.cos(angle) * 3  
+                    ENTITY.SET_ENTITY_ROTATION(Axes[1], rotX, rotY, rotZ * newPos.y * rotation_speed * 5, 0, true)
+
+                    if newPos.z > pos.z + 0.5 or newPos.z < pos.z - 0.5 then
+                        move_direction = -move_direction
+                    end
+                end
+            end
+            wait() 
+        end
+    else
+        if Axes then
+            remove_weapon_from_ped()
+            delete_axe(Axes)
+            Axes = nil
+            generated = false
+            holding = false
+            thrown = false
+        end
+    end
+end
+
+Freeing = 0
+baseSpeed = 1
+boostSpeed = 4
+liftSpeed = 0.8 
+descendSpeed = 0.8 
+idleLiftSpeed = 0.004 
+idleDirection = 1.5 
+idleTimer = 0 
+
+function Free_travel()
+    local localmyPed = players.user_ped()
+    local dpos = ENTITY.GET_ENTITY_COORDS(localmyPed)
+    if Freeing == 0 then
+        TASK.CLEAR_PED_TASKS_IMMEDIATELY(localmyPed)
+        local FreeHash = 2193278353
+        local cam_pay = CAM.GET_FINAL_RENDERED_CAM_ROT(0)
+        request_model(FreeHash)
+        hasFree = entities.create_object(FreeHash, dpos)
+        ENTITY.SET_ENTITY_VISIBLE(hasFree, false)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(localmyPed, hasFree, 0, 0, 0, 1.25, 0, 0, 0, false, false, false, false, 0, false)
+        ENTITY.SET_ENTITY_COMPLETELY_DISABLE_COLLISION(hasFree, false, false)
+        ENTITY.SET_ENTITY_ROTATION(hasFree, 0, 0, cam_pay.z, 0, false)
+        Freeing = 1
+    elseif Freeing == 1 then
+        local objPos = ENTITY.GET_ENTITY_COORDS(hasFree, false)
+        local isBoost = util.is_key_down(0x10)
+        local isLift = util.is_key_down(0x20) 
+        local isDescend = util.is_key_down(0x11)
+        local currentSpeed = isBoost and boostSpeed or baseSpeed
+        local currentLiftSpeed = isLift and liftSpeed or (isDescend and -descendSpeed or 0)
+        local hasMovementInput = false
+        if util.is_key_down(0x44) or util.is_key_down(0x41) then
+            hasMovementInput = true
+            local camrot = CAM.GET_FINAL_RENDERED_CAM_ROT(0)
+            ENTITY.SET_ENTITY_ROTATION(hasFree, 0, 0, camrot.z, 0, true)
+            local forwardV = v3.new(math.cos(math.rad(camrot.z)), math.sin(math.rad(camrot.z)), 0.0)
+            local delta = v3.new(forwardV)
+            delta:mul(currentSpeed)
+            if util.is_key_down(0x44) then
+                local newPos = v3.new(objPos)
+                newPos:add(delta)
+                ENTITY.SET_ENTITY_COORDS(hasFree, newPos.x, newPos.y, newPos.z, false, false, false, false)
+            elseif util.is_key_down(0x41) then
+                local newPos = v3.new(objPos)
+                newPos:sub(delta)
+                ENTITY.SET_ENTITY_COORDS(hasFree, newPos.x, newPos.y, newPos.z, false, false, false, false)
+            end
+        end
+        if util.is_key_down(0x53) or util.is_key_down(0x57) then
+            hasMovementInput = true
+            local camrot = CAM.GET_FINAL_RENDERED_CAM_ROT(0)
+            ENTITY.SET_ENTITY_ROTATION(hasFree, 0, 0, camrot.z, 0, true)
+            local rightV = v3.new(math.cos(math.rad(camrot.z + 90)), math.sin(math.rad(camrot.z + 90)), 0.0)
+            local delta = v3.new(rightV)
+            delta:mul(currentSpeed)
+            if util.is_key_down(0x53) then
+                local newPos = v3.new(objPos)
+                newPos:sub(delta)
+                ENTITY.SET_ENTITY_COORDS(hasFree, newPos.x, newPos.y, newPos.z, false, false, false, false)
+            elseif util.is_key_down(0x57) then
+                local newPos = v3.new(objPos)
+                newPos:add(delta)
+                ENTITY.SET_ENTITY_COORDS(hasFree, newPos.x, newPos.y, newPos.z, false, false, false, false)
+            end
+        end
+        if isLift or isDescend then
+            hasMovementInput = true
+            local newPos = v3.new(objPos)
+            newPos.z = newPos.z + currentLiftSpeed
+            ENTITY.SET_ENTITY_COORDS(hasFree, newPos.x, newPos.y, newPos.z, false, false, false, false)
+        end
+        if not hasMovementInput then
+            idleTimer = idleTimer + 1
+            if idleTimer >= 120 then 
+                idleDirection = -idleDirection
+                idleTimer = 0
+            end
+            local idleLift = idleLiftSpeed * idleDirection
+            local newPos = v3.new(objPos)
+            newPos.z = newPos.z + idleLift
+            ENTITY.SET_ENTITY_COORDS(hasFree, newPos.x, newPos.y, newPos.z, false, false, false, false)
+        else
+            idleTimer = 0 
+        end
+    end
+end
+
+function Cleanup_Free_travel()
+    local localmyPed = players.user_ped()
+    TASK.CLEAR_PED_TASKS_IMMEDIATELY(localmyPed)
+    ENTITY.DETACH_ENTITY(localmyPed, true, false)
+    if hasFree then
+        entities.delete_by_handle(hasFree)
+        hasFree = nil
+    end
+    Freeing = 0
+end
+--
+local npcs = {} 
+local monitoring = false
+function create_npc_circle(pid)
+    --local pid = PLAYER.PLAYER_ID()
+    local pidcoods = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)) pidcoods.z += 1
+    local terror_model = 0x9CF26183
+    request_model(terror_model)
+    
+    local radius1 = 0.6 
+    local num_npcs1 = 10  
+    create_npcs_in_circle(pidcoods, terror_model, radius1, num_npcs1)
+    local pidcoodss = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+    local radius2 = 1.2 
+    local num_npcs2 = 15 
+    create_npcs_in_circle(pidcoodss, terror_model, radius2, num_npcs2)
+end
+
+function create_npcs_in_circle(center_coords, model, radius, num_npcs)
+    local angle_step = 360 / num_npcs
+    for i = 1, num_npcs do
+        local angle = math.rad(i * angle_step)
+        local x_offset = radius * math.cos(angle)
+        local y_offset = radius * math.sin(angle)
+        local spawn_coords = v3.new(center_coords.x + x_offset, center_coords.y + y_offset, center_coords.z - 1)
+        local npc = CreatePed(26, model, spawn_coords, 0)
+        ENTITY.FREEZE_ENTITY_POSITION(npc, true)
+        request_anim("rcmpaparazzo_2")
+        TASK.TASK_PLAY_ANIM(npc, "rcmpaparazzo_2", "shag_loop_a", 8.0, -8.0, -1, 1, 0.0, false, false, false)
+        local heading = MISC.GET_HEADING_FROM_VECTOR_2D(center_coords.x - spawn_coords.x, center_coords.y - spawn_coords.y)
+        ENTITY.SET_ENTITY_HEADING(npc, heading)
+        table.insert(npcs, npc)
+    end
+end
+
+function delete_npcs()
+    for _, npc in ipairs(npcs) do
+        entities.delete_by_handle(npc)
+    end
+    npcs = {}
+end
+
+function monitor_player(pid)
+    while monitoring do
+        --local pid = PLAYER.PLAYER_ID()
+        local pidcoods = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+        if #npcs > 0 then
+            local circle_center = ENTITY.GET_ENTITY_COORDS(npcs[1])
+            AUDIO.DOES_CONTEXT_EXIST_FOR_THIS_PED(npcs[1], 'Provoke_Trespass')
+            AUDIO.PLAY_PED_AMBIENT_SPEECH_NATIVE(npcs[1], 'Provoke_Trespass', 'Speech_Params_Force_Shouted_Critical', 1)
+            local distance = MISC.GET_DISTANCE_BETWEEN_COORDS(pidcoods.x, pidcoods.y, pidcoods.z, circle_center.x, circle_center.y, circle_center.z, true)
+        
+            if distance > 10.0 then 
+                delete_npcs()
+                create_npc_circle(pid)
+            end
+        end
+        wait() 
+    end
+end
+--
+function drawLine(from, to, r1, g1, b1, a1, r2, g2, b2, a2)
+    local v2 = memory.alloc(8)
+    local v4 = memory.alloc(8)
+    if util.get_screen_coord_from_world_coord_no_adjustment(from.x, from.y, from.z, v2, v2 + 4) then
+        if util.get_screen_coord_from_world_coord_no_adjustment(to.x, to.y, to.z, v4, v4 + 4) then
+            directx.draw_line(memory.read_float(v2), memory.read_float(v2 + 4), memory.read_float(v4), memory.read_float(v4 + 4), r1, g1, b1, a1, r2, g2, b2, a2)
+        end
+    end
+end
+
+function ButtonMessage(text)--神宠
+    GRAPHICS.BEGIN_TEXT_COMMAND_SCALEFORM_STRING("STRING")
+    HUD.ADD_TEXT_COMPONENT_SUBSTRING_PLAYER_NAME(text)
+    GRAPHICS.END_TEXT_COMMAND_SCALEFORM_STRING()
+end
+
+function AddControlInstruction(scaleform, index, control, message)
+    GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(scaleform, "SET_DATA_SLOT")
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(index)
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_PLAYER_NAME_STRING(PAD.GET_CONTROL_INSTRUCTIONAL_BUTTONS_STRING(2, control, true))
+    ButtonMessage(message)
+    GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+end
+
+function laser_eyes_v6(playerPed)
+    local coordsList = {
+        ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerPed, -1.0, 100.0, 1.0),
+        ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerPed, 1.0, 100.0, 1.0),
+        ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerPed, 1.0, 100.0, -1.0),
+        ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerPed, -1.0, 100.0, -1.0)
+    }
+    local coords0from = PED.GET_PED_BONE_COORDS(playerPed, 25260, 0.0, 0.0, 0.0)
+    local coords1from = PED.GET_PED_BONE_COORDS(playerPed, 27474, 0.0, 0.0, 0.0)
+    local coords0to = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(playerPed, 0.0, 100.0, 0.0)
+    local HeatVision = util.joaat("WEAPON_RAILGUN")
+    MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords0from.x, coords0from.y, coords0from.z, coords0to.x, coords0to.y, coords0to.z, 250, true, HeatVision, playerPed, false, true, 1.0)
+    MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords1from.x, coords1from.y, coords1from.z, coords0to.x, coords0to.y, coords0to.z, 250, true, HeatVision, playerPed, false, true, 1.0)
+    GRAPHICS.DRAW_LINE(coords0from.x, coords0from.y, coords0from.z, coords0to.x, coords0to.y, coords0to.z, 0, 255, 0, 255)
+    GRAPHICS.DRAW_LINE(coords1from.x, coords1from.y, coords1from.z, coords0to.x, coords0to.y, coords0to.z, 255, 0, 0, 255)
+    for i = 1, #coordsList do
+        local from = coordsList[i]
+        local to = coordsList[(i % #coordsList) + 1]
+        drawLinev1(from, to)
+    end
+end
+function drawLinev1(from, to) -- 绘制线v1
+    local v2 = memory.alloc(8)
+    local v4 = memory.alloc(8)
+    if util.get_screen_coord_from_world_coord_no_adjustment(from.x, from.y, from.z, v2, v2 + 4) then
+        if util.get_screen_coord_from_world_coord_no_adjustment(to.x, to.y, to.z, v4, v4 + 4) then
+            directx.draw_line(memory.read_float(v2), memory.read_float(v2 + 4), memory.read_float(v4), memory.read_float(v4 + 4), 0, 1, 1, 1, 1, 1, 0, 1)
+        end
+    end
+end
+
+function setupScaleform(scaleform)
+    local scaleform = GRAPHICS.REQUEST_SCALEFORM_MOVIE(scaleform)
+    while not GRAPHICS.HAS_SCALEFORM_MOVIE_LOADED(scaleform) do
+        util.yield(0)
+    end
+    GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(scaleform, "CLEAR_ALL")
+    GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+    GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(scaleform, "SET_CLEAR_SPACE")
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(200)
+    GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+    AddControlInstruction(scaleform, 4, 32, "前进")
+    AddControlInstruction(scaleform, 3, 51, "激光炮")
+    AddControlInstruction(scaleform, 2, 21, "加速")
+    AddControlInstruction(scaleform, 1, 25, "火焰")
+    GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(scaleform, "DRAW_INSTRUCTIONAL_BUTTONS")
+    GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+    GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(scaleform, "SET_BACKGROUND_COLOUR")
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(0)
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(0)
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(0)
+    GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(80)
+    GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+    return scaleform
+end
+
 function MaxVehicle(...)
     local Vehicle<const>, Version = ...
     if not Vehicle then
@@ -26103,6 +26617,531 @@ GTTG(updatetroll, '控制无敌', {}, '', function(w)
     ENTITY.SET_ENTITY_PROOFS(pidp, true, true, true, true, true, true, 1, true)
 end)
 
+GTTG(updatetroll, "天基炮玩家", {}, "WASD可移动镜头", function(tjp)
+    gun = tjp
+    if not is_loading_into_session() and not ENTITY.IS_ENTITY_DEAD(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)) then
+        memory.write_int(memory.script_global(2689235 + 1 + (pid * 453) + 416),
+            memory.read_int(memory.script_global(2689235 + 1 + (pid * 453) + 416) | 1 << 0))
+        AUDIO.START_AUDIO_SCENE("dlc_xm_orbital_cannon_camera_active_scene")
+        CAM.DO_SCREEN_FADE_OUT(500)
+        wait(500)
+        local orbital_cannon_cam_cam = CAM.CREATE_CAM_WITH_PARAMS("DEFAULT_SCRIPTED_CAMERA",
+            players.get_position(pid).x, players.get_position(pid).y, players.get_position(pid).z + 30, -90, 0, 0, 70.0,
+            false, false)
+        local orbital_cannon_blip = HUD.ADD_BLIP_FOR_COORD(0, 0, 0)
+        HUD.SET_BLIP_SPRITE(orbital_cannon_blip, 390)
+        CAM.SET_CAM_ACTIVE(orbital_cannon_cam_cam, true)
+        CAM.RENDER_SCRIPT_CAMS(true, false, 0, true, true, 0)
+        CAM.DO_SCREEN_FADE_IN(500)
+        wait(500)
+        while gun do
+            if is_loading_into_session() or ENTITY.IS_ENTITY_DEAD(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)) then
+                gun = false
+            end
+            for pid = 0, 31 do
+                if players.exists(pid) then
+                    if players.is_in_interior(pid) == 0 and
+                        not NETWORK.IS_ENTITY_GHOSTED_TO_LOCAL_PLAYER(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)) and
+                        not is_player_passive(pid) then
+                        GRAPHICS.REQUEST_STREAMED_TEXTURE_DICT("helicopterhud", false)
+                        if GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED("helicopterhud") then
+                            local sizeY = 0.013 * GRAPHICS.GET_ASPECT_RATIO(false)
+                            local size = (((1 - (CAM.GET_CAM_FOV(orbital_cannon_cam_cam) / 110.0)) * 1.0 +
+                                             (CAM.GET_CAM_FOV(orbital_cannon_cam_cam) / 110.0) * 0.5) * 0.03)
+                            GRAPHICS.SET_DRAW_ORIGIN(players.get_position(pid).x, players.get_position(pid).y,
+                                players.get_position(pid).z, 0)
+                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", -size * 0.5, -size, 0.013, sizeY, 0.0,
+                                190, 255, 190, 255, true, 0)
+                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", size * 0.5, -size, 0.013, sizeY, 90.0,
+                                190, 255, 190, 255, true, 0)
+                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", -size * 0.5, size, 0.013, sizeY, 270.,
+                                190, 255, 190, 255, true, 0)
+                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", size * 0.5, size, 0.013, sizeY, 180.,
+                                190, 255, 190, 255, true, 0)
+                            GRAPHICS.CLEAR_DRAW_ORIGIN()
+                        end
+                    end
+                end
+            end
+            HUD.SET_BLIP_COORDS(orbital_cannon_blip, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z)
+            for i = 6, 9 do
+                HUD.HIDE_HUD_COMPONENT_THIS_FRAME(i)
+            end
+            PAD.DISABLE_ALL_CONTROL_ACTIONS(0)
+            for i = 0, 6 do
+                PAD.ENABLE_CONTROL_ACTION(0, i, true)
+            end
+            for i = 199, 202 do
+                PAD.ENABLE_CONTROL_ACTION(0, i, true)
+            end
+            for i = 14, 15 do
+                PAD.ENABLE_CONTROL_ACTION(0, i, true)
+            end
+            PAD.ENABLE_CONTROL_ACTION(0, 177, true)
+            PAD.ENABLE_CONTROL_ACTION(0, 237, true)
+            PAD.ENABLE_CONTROL_ACTION(0, 20, true)
+            PAD.ENABLE_CONTROL_ACTION(0, 246, true)
+            PAD.ENABLE_CONTROL_ACTION(0, 245, true)
+            GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+            HUD.SET_MINIMAP_IN_SPECTATOR_MODE(true, PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid))
+            STREAMING.REQUEST_ADDITIONAL_COLLISION_AT_COORD(players.get_position(pid).x, players.get_position(pid).y,
+                players.get_position(pid).z)
+            STREAMING.SET_FOCUS_POS_AND_VEL(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z, 0.0, 0.0, 0.0)
+            HUD.LOCK_MINIMAP_POSITION(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y)
+            NETWORK.NETWORK_SET_IN_FREE_CAM_MODE(true)
+            local orbital_cannon_cam = GRAPHICS.REQUEST_SCALEFORM_MOVIE("ORBITAL_CANNON_CAM")
+            if GRAPHICS.HAS_SCALEFORM_MOVIE_LOADED(orbital_cannon_cam) then
+                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_ZOOM_LEVEL")
+                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT(0.0)
+                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_STATE")
+                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3)
+                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_CHARGING_LEVEL")
+                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT(1.0)
+                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                GRAPHICS.DRAW_SCALEFORM_MOVIE_FULLSCREEN(orbital_cannon_cam, 255, 255, 255, 255, 0)
+            end
+            local direction = v3(0, 0, 0)
+            local speed = 0.5
+            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 22) then
+                speed = speed * 4
+            end
+            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 32) then
+                direction.y = speed
+            end
+            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 35) then
+                direction.x = speed
+            end
+            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 34) then
+                direction.x = -speed
+            end
+            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 33) then
+                direction.y = -speed
+            end
+            if direction ~= v3(0, 0, 0) then
+                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x + direction.x,
+                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y + direction.y,
+                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + direction.z)
+            end
+            local success, groundZ = util.get_ground_z(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z)
+            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 15) and
+                not (success and (CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - 6 - groundZ) < 25.0) then
+                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - 6)
+            elseif PAD.IS_DISABLED_CONTROL_PRESSED(0, 14) then
+                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + 6)
+            end
+            if success and (CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - groundZ) < 25.0 then
+                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, groundZ + 26)
+            end
+            if not HUD.IS_PAUSE_MENU_ACTIVE() then
+                if PAD.IS_DISABLED_CONTROL_JUST_PRESSED(0, 24) then
+                    local timer = util.current_time_millis() + 3000
+                    while timer > util.current_time_millis() and PAD.IS_DISABLED_CONTROL_PRESSED(0, 24) and
+                        not HUD.IS_PAUSE_MENU_ACTIVE() do
+                        AUDIO.STOP_AUDIO_SCENE("dlc_xm_orbital_cannon_camera_active_scene")
+                        for pid = 0, 31 do
+                            if players.exists(pid) then
+                                if players.is_in_interior(pid) == 0 and
+                                    not NETWORK.IS_ENTITY_GHOSTED_TO_LOCAL_PLAYER(
+                                        PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)) and not is_player_passive(pid) then
+                                    natives.REQUEST_STREAMED_TEXTURE_DICT("helicopterhud", false)
+                                    if GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED("helicopterhud") then
+                                        local sizeY = 0.013 * GRAPHICS.GET_ASPECT_RATIO(false)
+                                        local size = (((1 - (CAM.GET_CAM_FOV(orbital_cannon_cam_cam) / 110.0)) * 1.0 +
+                                                         (CAM.GET_CAM_FOV(orbital_cannon_cam_cam) / 110.0) * 0.5) * 0.03)
+                                        GRAPHICS.SET_DRAW_ORIGIN(players.get_position(pid).x,
+                                            players.get_position(pid).y, players.get_position(pid).z, 0)
+                                        GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", -size * 0.5, -size, 0.013,
+                                            sizeY, 0.0, 190, 255, 190, 255, true, 0)
+                                        GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", size * 0.5, -size, 0.013,
+                                            sizeY, 90.0, 190, 255, 190, 255, true, 0)
+                                        GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", -size * 0.5, size, 0.013,
+                                            sizeY, 270., 190, 255, 190, 255, true, 0)
+                                        GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", size * 0.5, size, 0.013,
+                                            sizeY, 180., 190, 255, 190, 255, true, 0)
+                                        GRAPHICS.CLEAR_DRAW_ORIGIN()
+                                    end
+                                end
+                            end
+                        end
+                        HUD.SET_BLIP_COORDS(orbital_cannon_blip, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                            CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z)
+                        for i = 6, 9 do
+                            HUD.HIDE_HUD_COMPONENT_THIS_FRAME(i)
+                        end
+                        PAD.DISABLE_ALL_CONTROL_ACTIONS(0)
+                        for i = 0, 6 do
+                            PAD.ENABLE_CONTROL_ACTION(0, i, true)
+                        end
+                        for i = 199, 202 do
+                            PAD.ENABLE_CONTROL_ACTION(0, i, true)
+                        end
+                        for i = 14, 15 do
+                            PAD.ENABLE_CONTROL_ACTION(0, i, true)
+                        end
+                        PAD.ENABLE_CONTROL_ACTION(0, 177, true)
+                        PAD.ENABLE_CONTROL_ACTION(0, 237, true)
+                        PAD.ENABLE_CONTROL_ACTION(0, 20, true)
+                        PAD.ENABLE_CONTROL_ACTION(0, 246, true)
+                        PAD.ENABLE_CONTROL_ACTION(0, 245, true)
+                        GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+                        HUD.SET_MINIMAP_IN_SPECTATOR_MODE(true, players.user_ped())
+                        STREAMING.REQUEST_ADDITIONAL_COLLISION_AT_COORD(players.get_position(players.user()).x,
+                            players.get_position(players.user()).y, players.get_position(players.user()).z)
+                        STREAMING.SET_FOCUS_POS_AND_VEL(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                            CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z,
+                            0.0, 0.0, 0.0)
+                        HUD.LOCK_MINIMAP_POSITION(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                            CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y)
+                        NETWORK.NETWORK_SET_IN_FREE_CAM_MODE(true)
+                        local orbital_cannon_cam = GRAPHICS.REQUEST_SCALEFORM_MOVIE("ORBITAL_CANNON_CAM")
+                        if GRAPHICS.HAS_SCALEFORM_MOVIE_LOADED(orbital_cannon_cam) then
+                            GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_ZOOM_LEVEL")
+                            GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT(0.0)
+                            GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                            GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_STATE")
+                            GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3)
+                            GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                            if timer - util.current_time_millis() <= 1000 then
+                                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_COUNTDOWN")
+                                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(1)
+                                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                            elseif timer - util.current_time_millis() <= 2000 then
+                                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_COUNTDOWN")
+                                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(2)
+                                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                            elseif timer - util.current_time_millis() <= 3000 then
+                                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_COUNTDOWN")
+                                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3)
+                                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                            end
+                            GRAPHICS.DRAW_SCALEFORM_MOVIE_FULLSCREEN(orbital_cannon_cam, 255, 255, 255, 255, 0)
+                        end
+                        local direction = v3(0, 0, 0)
+                        local speed = 0.5
+                        if PAD.IS_DISABLED_CONTROL_PRESSED(0, 22) then
+                            speed = speed * 4
+                        end
+                        if PAD.IS_DISABLED_CONTROL_PRESSED(0, 32) then
+                            direction.y = speed
+                        end
+                        if PAD.IS_DISABLED_CONTROL_PRESSED(0, 35) then
+                            direction.x = speed
+                        end
+                        if PAD.IS_DISABLED_CONTROL_PRESSED(0, 34) then
+                            direction.x = -speed
+                        end
+                        if PAD.IS_DISABLED_CONTROL_PRESSED(0, 33) then
+                            direction.y = -speed
+                        end
+                        if direction ~= v3(0, 0, 0) then
+                            CAM.SET_CAM_COORD(orbital_cannon_cam_cam,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x + direction.x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y + direction.y,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + direction.z)
+                        end
+                        local success, groundZ = util.get_ground_z(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                            CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z)
+                        if PAD.IS_DISABLED_CONTROL_PRESSED(0, 15) and
+                            not (success and (CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - 6 - groundZ) < 25.0) then
+                            CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + 6)
+                        elseif PAD.IS_DISABLED_CONTROL_PRESSED(0, 14) then
+                            CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + 6)
+                        end
+                        if success and (CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - groundZ) < 25.0 then
+                            CAM.SET_CAM_COORD(orbital_cannon_cam_cam, v3(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, groundZ + 26))
+                        end
+                        wait(0)
+                    end
+                    if timer <= util.current_time_millis() then
+                        local raycastResult = get_raycast_result(1000.0)
+                        local pos = raycastResult.endCoords
+                        local rot = raycastResult.surfaceNormal:toRot()
+                        rot.x = rot.x - 90.0
+                        request_ptfx_asset("scr_xm_orbital")
+                        GRAPHICS.USE_PARTICLE_FX_ASSET("scr_xm_orbital")
+                        GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD("scr_xm_orbital_blast", pos.x, pos.y,
+                            pos.z, rot.x, rot.y, rot.z, 1.0, false, false, false, true)
+                        FIRE.ADD_EXPLOSION(pos.x, pos.y, pos.z, 59, 1.0, true, false, 1.0, false)
+                        CAM.SHAKE_CAM(orbital_cannon_cam_cam, "GAMEPLAY_EXPLOSION_SHAKE", 1.5)
+                        local timer = util.current_time_millis() + 3000
+                        while timer > util.current_time_millis() do
+                            AUDIO.STOP_AUDIO_SCENE("dlc_xm_orbital_cannon_camera_active_scene")
+                            for pid = 0, 31 do
+                                if players.exists(pid) then
+                                    if players.is_in_interior(pid) == 0 and
+                                        not NETWORK.IS_ENTITY_GHOSTED_TO_LOCAL_PLAYER(
+                                            PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)) and not is_player_passive(pid) then
+                                        GRAPHICS.REQUEST_STREAMED_TEXTURE_DICT("helicopterhud", false)
+                                        if GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED("helicopterhud") then
+                                            local sizeY = 0.013 * GRAPHICS.GET_ASPECT_RATIO(false)
+                                            local size =
+                                                (((1 - (CAM.GET_CAM_FOV(orbital_cannon_cam_cam) / 110.0)) * 1.0 +
+                                                    (CAM.GET_CAM_FOV(orbital_cannon_cam_cam) / 110.0) * 0.5) * 0.03)
+                                            GRAPHICS.SET_DRAW_ORIGIN(players.get_position(pid), 0)
+                                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", -size * 0.5, -size,
+                                                0.013, sizeY, 0.0, 190, 255, 190, 255, true, 0)
+                                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", size * 0.5, -size,
+                                                0.013, sizeY, 90.0, 190, 255, 190, 255, true, 0)
+                                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", -size * 0.5, size,
+                                                0.013, sizeY, 270., 190, 255, 190, 255, true, 0)
+                                            GRAPHICS.DRAW_SPRITE("helicopterhud", "hud_corner", size * 0.5, size, 0.013,
+                                                sizeY, 180., 190, 255, 190, 255, true, 0)
+                                            GRAPHICS.CLEAR_DRAW_ORIGIN()
+                                        end
+                                    end
+                                end
+                            end
+                            HUD.SET_BLIP_COORDS(orbital_cannon_blip, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z)
+                            for i = 6, 9 do
+                                HUD.HIDE_HUD_COMPONENT_THIS_FRAME(i)
+                            end
+                            PAD.DISABLE_ALL_CONTROL_ACTIONS(0)
+                            for i = 0, 6 do
+                                PAD.ENABLE_CONTROL_ACTION(0, i, true)
+                            end
+                            for i = 199, 202 do
+                                PAD.ENABLE_CONTROL_ACTION(0, i, true)
+                            end
+                            for i = 14, 15 do
+                                PAD.ENABLE_CONTROL_ACTION(0, i, true)
+                            end
+                            PAD.ENABLE_CONTROL_ACTION(0, 177, true)
+                            PAD.ENABLE_CONTROL_ACTION(0, 237, true)
+                            PAD.ENABLE_CONTROL_ACTION(0, 20, true)
+                            PAD.ENABLE_CONTROL_ACTION(0, 246, true)
+                            PAD.ENABLE_CONTROL_ACTION(0, 245, true)
+                            GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+                            HUD.SET_MINIMAP_IN_SPECTATOR_MODE(true, players.user_ped())
+                            STREAMING.REQUEST_ADDITIONAL_COLLISION_AT_COORD(players.get_position(players.user()).x,
+                                players.get_position(players.user()).y, players.get_position(players.user()).z)
+                            STREAMING.SET_FOCUS_POS_AND_VEL(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z, 0.0, 0.0, 0.0)
+                            HUD.LOCK_MINIMAP_POSITION(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y)
+                            NETWORK.NETWORK_SET_IN_FREE_CAM_MODE(true)
+                            local orbital_cannon_cam = GRAPHICS.REQUEST_SCALEFORM_MOVIE("ORBITAL_CANNON_CAM")
+                            if GRAPHICS.HAS_SCALEFORM_MOVIE_LOADED(orbital_cannon_cam) then
+                                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_ZOOM_LEVEL")
+                                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT(0.0)
+                                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_STATE")
+                                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3)
+                                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                                GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_cannon_cam, "SET_CHARGING_LEVEL")
+                                GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT(tonumber(1.0 -
+                                                                                             ((timer -
+                                                                                                 util.current_time_millis()) /
+                                                                                                 3000)))
+                                GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+                                GRAPHICS.DRAW_SCALEFORM_MOVIE_FULLSCREEN(orbital_cannon_cam, 255, 255, 255, 255, 0)
+                            end
+                            local direction = v3(0, 0, 0)
+                            local speed = 0.5
+                            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 22) then
+                                speed = speed * 4
+                            end
+                            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 32) then
+                                direction.y = speed
+                            end
+                            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 35) then
+                                direction.x = speed
+                            end
+                            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 34) then
+                                direction.x = -speed
+                            end
+                            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 33) then
+                                direction.y = -speed
+                            end
+                            if direction ~= v3(0, 0, 0) then
+                                CAM.SET_CAM_COORD(orbital_cannon_cam_cam,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x + direction.x,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y + direction.y,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + direction.z)
+                            end
+                            local success, groundZ = util.get_ground_z(CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z)
+                            if PAD.IS_DISABLED_CONTROL_PRESSED(0, 15) and
+                                not (success and (CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - 6 - groundZ) < 25.0) then
+                                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - 6)
+                            elseif PAD.IS_DISABLED_CONTROL_PRESSED(0, 14) then
+                                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z + 6)
+                            end
+                            if success and (CAM.GET_CAM_COORD(orbital_cannon_cam_cam).z - groundZ) < 25.0 then
+                                CAM.SET_CAM_COORD(orbital_cannon_cam_cam, v3(
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).x,
+                                    CAM.GET_CAM_COORD(orbital_cannon_cam_cam).y, groundZ + 26))
+                            end
+
+                            wait(0)
+                        end
+                    end
+                    AUDIO.START_AUDIO_SCENE("dlc_xm_orbital_cannon_camera_active_scene")
+                end
+            end
+            wait(0)
+        end
+        CAM.DO_SCREEN_FADE_OUT(500)
+        wait(500)
+        if orbital_cannon_cam_cam then
+            CAM.SET_CAM_ACTIVE(orbital_cannon_cam_cam, false)
+            CAM.RENDER_SCRIPT_CAMS(false, false, 0, false, false, false)
+            CAM.DESTROY_CAM(orbital_cannon_cam_cam, false)
+        end
+        if orbital_cannon_blip then
+            util.remove_blip(orbital_cannon_blip)
+        end
+        GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(false)
+        HUD.SET_MINIMAP_IN_SPECTATOR_MODE(false, players.user_ped())
+        AUDIO.STOP_AUDIO_SCENE("dlc_xm_orbital_cannon_camera_active_scene")
+        NETWORK.NETWORK_SET_IN_FREE_CAM_MODE(false)
+        HUD.UNLOCK_MINIMAP_POSITION()
+        PAD.ENABLE_ALL_CONTROL_ACTIONS(0)
+        STREAMING.CLEAR_FOCUS()
+        CAM.DO_SCREEN_FADE_IN(500)
+        wait(500)
+        memory.write_int(memory.script_global(2689235 + 1 + (players.user() * 453) + 416),
+            memory.read_int(memory.script_global(2689235 + 1 + (players.user() * 453) + 416) & ~1 << 0))
+    else
+        gun = false
+    end
+end)
+
+
+GTAC(updatetroll, "可汉贾利攻击", {}, "跟随目标", function()
+    local veh_hash = util.joaat("khanjali")
+    local ped_hash = util.joaat('a_m_o_tramp_01')
+    request_model(veh_hash, 2000)
+    request_model(ped_hash, 2000)
+    local tar_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)
+    local offset = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(tar_ped, 0.0, -10.0, 0.0)
+    local success, new_z
+    success = false
+    local tries = 0
+    while not success do
+        if tries > 10 then
+            break
+        end
+        tries = tries + 1
+        success, new_z = util.get_ground_z(offset.x, offset.y, offset.z)
+        if success then 
+            offset.z = new_z
+            break
+        end
+        wait()
+    end
+    turret = spawn_vehicle(veh_hash, offset, math.random(270))
+    VEHICLE.SET_VEHICLE_MOD(turret, 10, math.random(-1, 0))
+    peddd = CreatePed(28, ped_hash, offset, math.random(270))
+    ENTITY.SET_ENTITY_INVINCIBLE(turret, true)
+    ENTITY.SET_ENTITY_INVINCIBLE(peddd, true)
+    PED.SET_PED_INTO_VEHICLE(peddd, turret, -1)
+    PED.SET_PED_ACCURACY(peddd, 100.0)
+    PED.SET_PED_COMBAT_RANGE(peddd, 3)
+    TASK.TASK_COMBAT_PED(peddd, tar_ped, 0, 16)
+    PED.SET_PED_SHOOT_RATE(peddd, 0)
+    TASK.TASK_VEHICLE_SHOOT_AT_PED(peddd, tar_ped, 100.0)
+    PED.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(peddd, true)
+    util.create_thread(function()
+        while true do
+            local tar_coords = ENTITY.GET_ENTITY_COORDS(tar_ped, true)
+            local veh_coords = ENTITY.GET_ENTITY_COORDS(turret, true)
+            local distance = v3.distance(veh_coords, tar_coords)
+            if distance > 20.0 then
+                offset = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(tar_ped, 0.0, -10.0, 0.0)
+                success, new_z = util.get_ground_z(offset.x, offset.y, offset.z)
+                if success then
+                    offset.z = new_z
+                    ENTITY.SET_ENTITY_COORDS(turret, offset.x, offset.y, offset.z, false, false, false, true)
+                end
+            end
+            wait()
+        end
+    end)
+end)
+
+GTAC(updatetroll, "炮塔攻击", {}, "跟随目标.", function()
+    local veh_hash = util.joaat("trailersmall2")
+    local ped_hash = util.joaat('a_m_o_tramp_01')
+    request_model(veh_hash, 2000)
+    request_model(ped_hash, 2000)
+    local tar_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)
+    local offset = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(tar_ped, 0.0, -10.0, 0.0)
+    local success, new_z
+    success = false
+    local tries = 0
+    while not success do
+        if tries > 10 then
+            break
+        end
+        tries = tries + 1
+        success, new_z = util.get_ground_z(offset.x, offset.y, offset.z)
+        if success then 
+            offset.z = new_z
+            break
+        end
+        wait()
+    end
+    turret = spawn_vehicle(veh_hash, offset, math.random(270))
+    peddd = CreatePed(28, ped_hash, offset, math.random(270))
+    ENTITY.SET_ENTITY_INVINCIBLE(turret, true)
+    ENTITY.SET_ENTITY_INVINCIBLE(peddd, true)
+    PED.SET_PED_INTO_VEHICLE(peddd, turret, -1)
+    PED.SET_PED_ACCURACY(peddd, 100.0)
+    PED.SET_PED_COMBAT_RANGE(peddd, 3)
+    TASK.TASK_COMBAT_PED(peddd, tar_ped, 0, 16)
+    PED.SET_PED_SHOOT_RATE(peddd, 0)
+    TASK.TASK_VEHICLE_SHOOT_AT_PED(peddd, tar_ped, 100.0)
+    PED.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(peddd, true)
+    util.create_thread(function()
+        VEHICLE.SET_VEHICLE_MOD(turret, 10, 1)
+        while true do
+            local tar_coords = ENTITY.GET_ENTITY_COORDS(tar_ped, true)
+            local veh_coords = ENTITY.GET_ENTITY_COORDS(turret, true)
+            local distance = v3.distance(veh_coords, tar_coords)
+            if distance > 20.0 then
+                offset = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(tar_ped, 0.0, -10.0, 0.0)
+                success, new_z = util.get_ground_z(offset.x, offset.y, offset.z)
+                if success then
+                    offset.z = new_z
+                    ENTITY.SET_ENTITY_COORDS(turret, offset.x, offset.y, offset.z, false, false, false, true)
+                end
+            end
+            wait()
+        end
+    end)
+end)
+
+GTTG(updatetroll,"性爱笼子", {}, "自动跟踪玩家", function(on)
+    if on then
+        monitoring = true
+        create_npc_circle(pid)
+        monitor_player(pid)
+    else
+        monitoring = false
+        wait()
+        delete_npcs()
+    end
+end)
+
 GTAC(updatetroll,"鲸鱼吃人", {}, "", function()
     jingyuchiren(pid)
 end)
@@ -31480,6 +32519,14 @@ local mirloop =  GTLP(mrplaym, '类型:雪球', {'rain'}, '启用下雨', functi
             menu.trigger_commands("spectate"..players.get_name(pid) .." on")
         else
             menu.trigger_commands("spectate"..players.get_name(pid) .." off")
+        end
+    end)
+
+    GTTG(GTROOT,"上帝视角观看[天眼通]", {}, "空格升高视角,Ctrl下降视角", function(镜头开关)
+        if 镜头开关 then
+            启用镜头(pid)
+        else
+            禁用镜头()
         end
     end)
 

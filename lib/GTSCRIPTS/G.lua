@@ -12,8 +12,8 @@ function loadgt()
 if async_http.have_access() then
 memory.alloc_int()
     require "lib.GTSCRIPTS.GTC.logo.GLogo"  
-    require "lib.GTSCRIPTS.W"  
-    require ('lib/GTSCRIPTS/T') 
+    --require "lib.GTSCRIPTS.W"  
+    --require ('lib/GTSCRIPTS/T') 
     require "lib.GTSCRIPTS.GTW.fixnative"
     K = require 'lib.GTSCRIPTS.K' 
     local scaleForm = require'lib.GTSCRIPTS.Z' 
@@ -40,7 +40,7 @@ function log(str)
 end
 --
 deleteframe = false
-connect_frames = {"等待监管系统回应", "等待监管系统回应.", "等待监管系统回应..", "等待监管系统回应..."}
+connect_frames = {"与 GTLua 建立通信", "与 GTLua 建立通信.", "与 GTLua 建立通信..", "与 GTLua 建立通信..."}
 connection = GTD(G, "C")
 running = true
 
@@ -61,6 +61,7 @@ util.create_tick_handler(function()
     end
 end)
 
+SID = SOCIALCLUB.SC_ACCOUNT_INFO_GET_NICKNAME(players.user())
 util.create_thread(function()
     if not async_http.have_access() then
         wait(math.random(1000, 3000))
@@ -72,7 +73,7 @@ util.create_thread(function()
     else
         wait(math.random(2000, 8000))
         deleteframe = true
-        GTluaScript.set_menu_name(connection, "允许访问")
+        GTluaScript.set_menu_name(connection, SID.." 允许访问")
         wait(1500)
         menu.delete(connection)
     end
@@ -210,9 +211,6 @@ dofile(filesystem.scripts_dir().."\\lib\\GTSCRIPTS\\Q.lua")
 if SCRIPT_MANUAL_START then
     menu.trigger_commands("gtluascript")
 end
-
---gtoast("GTLua 为开源代码 不要相信任何“破解版”\n以及包括所有Stand脚本,全部为开源代码\n不要相信一些大雅之堂的小丑,比如尊*")
-gtoast("幸福了 然后呢")
 
 if players.get_name(players.user()) == "SmallGodGirlo3o" then
     gtoast("欢迎回来，美丽的丢丢~")
@@ -361,6 +359,37 @@ for i = 0, get_friend_count() do
     ::yes::
 end
 
+boneesp = GT(players_root, "骨骼透视")
+
+GTLP(boneesp,"骨骼透视[NPC]", {""}, "", function()
+    local Allpeds = entities.get_all_peds_as_handles()
+    for i = 1, #Allpeds do
+        local boneCoords = {}
+        if not PED.IS_PED_A_PLAYER(Allpeds[i]) then
+            for _, bone in ipairs(pedbone) do
+                local coords = PED.GET_PED_BONE_COORDS(Allpeds[i], bone.id, 0.0, 0.0, 0.0)
+                table.insert(boneCoords, coords)
+            end
+            for _, connection in ipairs(boneConnections) do
+                drawLine(boneCoords[connection[1]], boneCoords[connection[2]], 1, 0 ,1 ,1, 0, 1, 1, 1)
+            end
+        end
+    end
+end)
+
+GTLP(boneesp,"骨骼透视[玩家]", {""}, "", function()
+    for _, pid in players.list(false, true, true) do 
+        local boneCoords = {}
+        for _, bone in ipairs(pedbone) do
+            local coords = PED.GET_PED_BONE_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid), bone.id, 0.0, 0.0, 0.0)
+            table.insert(boneCoords, coords)
+        end
+        for _, connection in ipairs(boneConnections) do
+            drawLine(boneCoords[connection[1]], boneCoords[connection[2]], 1, 0 ,1 ,1, 0, 1, 1, 1)
+        end
+    end
+end)
+
 player_info = GT(players_root, '玩家信息栏', {''}, '开启后请在玩家列表中查看玩家信息')
 InfoLoads = GTAC(player_info, "启动玩家信息栏显示", {""}, "", function()
     wait(100)
@@ -447,7 +476,6 @@ speed = 0.0075
 idle_sp = false
 
 --皇榜
---require "lib.GTSCRIPTS.GTA.list"
 notified_sp = {}
 spo = GTTG(players_root, "SPO", {""}, "", function(f)
     spgt = f
@@ -524,7 +552,6 @@ resetsp.value = true
 resetsp.visible = false
 
 --至臻
---require "lib.GTSCRIPTS.GTA.list"
 notified_sx = {}
 sxo = GTTG(players_root, "SXO", {""}, "", function(f)
     spgt = f
@@ -587,29 +614,14 @@ end)
 resetsx.value = true 
 resetsx.visible = false
 
---[[星探
-notified_mid = {}
-mio = GTTG(players_root, "MIO", {"miocheck"}, "", function(f)
-    spgt = f
-    while spgt do
-        for pid = 0, 32 do
-            mid = players.get_name(pid)
-            for _,id in ipairs(masterid) do
-                if mid == id.mid and not notified_mid[id.mid] then
-                    if pid then
-                        gtoast("GTLua VIP 星探级会员 "..mid.." 正在该战局")
-                        mastergt(f)
-                        notified_mid[id.mid] = true
-                    end
-                end
-            end
-        end
-        wait(2000)
-    end
+util.create_tick_handler(function ()
+    menu.trigger_command(dev, true)
+    menu.trigger_command(spo, true)
+    menu.trigger_command(sxo, true)
+    menu.trigger_command(resetdev, true)
+    menu.trigger_command(resetsp, true)
+    menu.trigger_command(resetsx, true)
 end)
-
-menu.trigger_commands("miocheck on")
-menu.set_visible(mio, false)]]
 --
 menu.link(players_root, menu.ref_by_path("Online>Rockstar ID Tools"), true)
 cs2 = menu.link(players_root, menu.ref_by_path("Online>Quick Progress>Casino"), true)
@@ -827,6 +839,54 @@ local function gameplay_camera(distance)
     }
     return destination
 end
+
+function 开启传送镜头()
+    local 我的位置 = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+    我的镜头 = CAM.CREATE_CAM_WITH_PARAMS("DEFAULT_SCRIPTED_CAMERA", 我的位置.x, 我的位置.y, 我的位置.z + 10, 
+    CAM.GET_GAMEPLAY_CAM_ROT().y - 90, CAM.GET_GAMEPLAY_CAM_ROT().y, CAM.GET_GAMEPLAY_CAM_ROT().z, 200, true, true)
+    CAM.SET_CAM_ACTIVE(我的镜头, true)
+    CAM.RENDER_SCRIPT_CAMS(true, true, 1500, true, true, 0)
+end
+
+function 关闭传送镜头()
+    if 我的镜头 ~= nil then
+        CAM.SET_CAM_ACTIVE(我的镜头, false)
+        CAM.DESTROY_CAM(我的镜头, true)
+        CAM.RENDER_SCRIPT_CAMS(false, true, 1500, true, true, 0)
+        我的镜头 = nil
+    end
+end
+
+GTLP(players_root,"丝滑传送", {}, "标点自动传送", function()
+    local waypointpos = HUD.GET_BLIP_COORDS(HUD.GET_FIRST_BLIP_INFO_ID(8))
+    if HUD.IS_WAYPOINT_ACTIVE() then
+        开启传送镜头()
+        wait(1500) 
+        local success, groundz
+        for i = 1, 10 do
+            success, groundz = util.get_ground_z(waypointpos.x, waypointpos.y)
+            if success then
+                waypointpos.z = groundz
+                break
+            end
+            wait(100) 
+        end
+        if not success then
+            waypointpos.z = waypointpos.z + 5.0
+        end
+        ENTITY.SET_ENTITY_COORDS(players.user_ped(), waypointpos.x, waypointpos.y, waypointpos.z, false, false, false, false)
+        for i = 1, 10 do
+            success, groundz = util.get_ground_z(waypointpos.x, waypointpos.y)
+            if success then
+                ENTITY.SET_ENTITY_COORDS(players.user_ped(), waypointpos.x, waypointpos.y, groundz, false, false, false, false)
+                break
+            end
+            wait(100)
+        end
+        wait(1500)
+        关闭传送镜头()
+    end
+end)
 
 GTTG(players_root, '虚假无敌', {}, '', function(wudi)
     wd = wudi
@@ -1628,6 +1688,44 @@ menu.colour(WPTFX, name, {"effectcolour"}, helpText, effectColour, false, SetEff
 menu.rainbow(menuColour)
 --
 newweapon = GT(weapon_options, "新枪械玩法")
+
+GTTG(newweapon,"可活跃吸附枪", {}, "瞄准后可射击出实体", function(xf)
+    local xfq = xf
+    local targetEntity = nil
+    local rotationAngle = 0
+    while xfq do
+        wait()
+        local me = players.user()
+        if PLAYER.IS_PLAYER_FREE_AIMING(me) then
+            if not targetEntity then
+                targetEntity = get_entity_player_is_aiming_at(me)
+            end
+            if targetEntity and targetEntity ~= 0 then
+                local my_pos = players.get_position(me)
+                local dir = v3.toDir(CAM.GET_GAMEPLAY_CAM_ROT())
+                if PED.IS_PED_SHOOTING(players.user_ped(me)) then
+                    local rot = CAM.GET_GAMEPLAY_CAM_ROT()
+                    ENTITY.FREEZE_ENTITY_POSITION(targetEntity, false)
+                    ENTITY.SET_ENTITY_ROTATION(targetEntity, rot.x, rot.y, rot.z, 1, false)
+                    ENTITY.APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(targetEntity, 1, 0, 2000, 0, true, true, true, true)
+                    ENTITY.SET_ENTITY_ALPHA(targetEntity, 255, false)
+                    wait(1000)
+                    targetEntity = nil
+                    rotationAngle = 0 
+                else
+                    rotationAngle = (rotationAngle + 2) % 360 
+                    ENTITY.SET_ENTITY_COORDS_NO_OFFSET(targetEntity, my_pos.x + dir.x * 8, my_pos.y + dir.y * 8, my_pos.z + dir.z * 8)
+                    ENTITY.SET_ENTITY_ROTATION(targetEntity, 0, 0, rotationAngle, 0, true)
+                    ENTITY.SET_ENTITY_ALPHA(targetEntity, 180, false)
+                    ENTITY.FREEZE_ENTITY_POSITION(targetEntity, true)
+                end
+            end
+        else
+            targetEntity = nil
+            rotationAngle = 0 
+        end
+    end
+end)
 
 GTLP(newweapon,"绳索载具枪[新]", {}, "", function()
     ropeTogether()
@@ -2765,9 +2863,243 @@ lightning:slider('蓝色数值', {}, '',0, 255, 255, 10, function(gvalb)
 end)
 
 -- 新型娱乐
+
+GTTG(newfunc,"钓鱼佬", {""}, "", function(oo)
+    if oo then 
+        local objecthash = util.joaat('prop_fishing_rod_01')
+        local roosterhash = util.joaat('IG_RoosterMcCraw')
+        local pedhash = 802685111
+
+        local self_Coords = players.get_position(players.user())
+        request_model(objecthash)
+        request_model(roosterhash)
+        request_model(pedhash)
+
+        ped_fish = entities.create_ped(26, pedhash, self_Coords, 0)
+        Root = entities.create_object(objecthash, self_Coords)
+        Root_two = entities.create_object(roosterhash, self_Coords)
+
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(Root, players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), 0x49d9), 0.15, 0.06, 0.01, -100, -45, -45, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(Root_two, Root, 0, 0, 0, 2.5, 0, 0, 0, false, false, false, false, 0, true)
+
+        request_anim("amb@world_human_stand_fishing@idle_a")
+        TASK.TASK_PLAY_ANIM(players.user_ped(), "amb@world_human_stand_fishing@idle_a", "idle_b", 8.0, 8.0, -1, 1, 0.3, true, true, true)
+
+        local ropePos = ENTITY.GET_ENTITY_COORDS(Root_two, true)
+        local ropePos2 = ENTITY.GET_ENTITY_COORDS(ped_fish, true)
+        local Distance = v3.distance(ropePos, ropePos2)
+
+        local rope = PHYSICS.ADD_ROPE(ropePos.x, ropePos.y, ropePos.z, 0, 0, 0, Distance, 5, 1, 1, 1, false, false, false, 1.0, false, 0)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(rope, Root_two, ped_fish, ropePos.x, ropePos.y, ropePos.z, ropePos2.x, ropePos2.y, ropePos2.z, Distance, false, false, 0, 0)
+    else
+        TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+        entities.delete_by_handle(Root)
+        entities.delete_by_handle(Root_two)
+        entities.delete_by_handle(ped_fish)
+
+        local mvp = memory.alloc(4)
+        for i = 0, 100 do
+            memory.write_int(mvp, i)
+            PHYSICS.DELETE_ROPE(mvp)
+        end
+    end
+end)
+
+GTTG(newfunc,"御剑围绕", {}, "", function(yg)
+yjgz = yg
+    if yjgz then
+        for _, dagger in ipairs(daggers) do
+            if dagger and ENTITY.DOES_ENTITY_EXIST(dagger) then
+                entities.delete_by_handle(dagger)
+            end
+        end
+        daggers = {}  
+        daggerParams = {}  
+        initDaggerParams()
+        for i = 1, numDaggers do
+            local playerCoords = players.get_position(players.user())
+            request_model(601713565)
+            local dagger = entities.create_object(601713565, playerCoords)
+            table.insert(daggers, dagger)
+            local params = daggerParams[i]
+            local x = playerCoords.x + params.radius * math.cos(params.angle)
+            local y = playerCoords.y + params.radius * math.sin(params.angle)
+            local z = playerCoords.z + 0.5
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(dagger, x, y, z, false, false, false)
+            local rotationAngle = params.rotationSpeed * params.angle
+            if rotationAngle >= 360 then
+                rotationAngle = rotationAngle - 360
+            end
+            ENTITY.SET_ENTITY_ROTATION(dagger, rotationAngle, rotationAngle * 5, 0.0, 2, true)
+        end
+        
+        while yjgz do
+            local playerCoords = players.get_position(players.user())
+            if PAD.IS_CONTROL_JUST_RELEASED(38, 38) then
+                    shootDagger()
+            end
+            for i, dagger in ipairs(daggers) do
+                if not dagger or not ENTITY.DOES_ENTITY_EXIST(dagger) then
+                    table.remove(daggers, i)
+                    table.remove(daggerParams, i)
+                else
+                    local params = daggerParams[i]
+                    params.angle = params.angle + params.speed 
+                    local zOffset = params.zSpeed * params.angle 
+                    local x = playerCoords.x + params.radius * math.cos(params.angle)
+                    local y = playerCoords.y + params.radius * math.sin(params.angle)
+                    local z = playerCoords.z + 0.5 + zOffset  
+                    ENTITY.SET_ENTITY_COORDS_NO_OFFSET(dagger, x, y, z, false, false, false)
+                    local rotationAngle = params.rotationSpeed * params.angle
+                    if rotationAngle >= 360 then
+                        rotationAngle = rotationAngle - 360
+                    end
+                    local rotationX = rotationAngle
+                    local rotationY = rotationAngle * 5
+                    local rotationZ = 0.0  
+
+                    ENTITY.SET_ENTITY_ROTATION(dagger, rotationX, rotationY, rotationZ, 2, true)
+                end
+            end
+
+            wait(0)
+        end
+
+    else
+        for _, dagger in ipairs(daggers) do
+            if dagger and ENTITY.DOES_ENTITY_EXIST(dagger) then
+                entities.delete_by_handle(dagger)
+            end
+        end
+    end
+    yjgz = false
+end)
+
+local fireEntity = 0
+local rotationSpeed = 0.5 
+GTTG(newfunc, "实体火焰", {}, "", function(enabled)
+    if enabled then
+        local playerPed = players.user_ped()
+        local playerCoords = players.get_position(players.user())
+        request_model(1629461201)
+        fireEntity = entities.create_object(1629461201, playerCoords)
+        local startTime = os.clock()
+        local handler
+        handler = util.create_tick_handler(function()
+            if not enabled or fireEntity == nil then
+                if fireEntity then
+                    entities.delete_by_handle(fireEntity)
+                    fireEntity = nil
+                end
+                return false 
+            end
+            playerCoords = players.get_position(players.user())
+            ENTITY.SET_ENTITY_COORDS(fireEntity, playerCoords.x, playerCoords.y, playerCoords.z + 0.15, false, false, false, false)
+            local currentTime = os.clock()
+            local rotationAngle = (currentTime - startTime) * rotationSpeed * 360 
+            ENTITY.SET_ENTITY_ROTATION(fireEntity, 0, 0, rotationAngle % 360)
+            wait()
+            return true
+        end)
+
+    else
+        if fireEntity then
+            entities.delete_by_handle(fireEntity)
+            fireEntity = 0
+        end
+    end
+end)
+
+GTTG(newfunc,"暗影神斧", {}, "按右键握住或者环绕,握住的时候可以丢出去,按E丢出后再按右键可回来.", function(开关)
+    load_dark_axe(开关)
+end)
+
+util.create_tick_handler(function()
+    if active_rabbit_animal ~= 0 and rabbit then
+    form = setupScaleform("instructional_buttons")
+    GRAPHICS.DRAW_SCALEFORM_MOVIE_FULLSCREEN(form, 1, 1, 1, 1, 0)
+	if(util.is_key_down(0x57))then -- W键
+	local location = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+	local CamRot = CAM.GET_GAMEPLAY_CAM_ROT(2)
+	local Distance = 5
+	local SpawnPosition = location
+		SpawnPosition.x = location.x - ( math.sin(math.rad(CamRot.z)) * Distance )
+		SpawnPosition.y = location.y + ( math.cos(math.rad(CamRot.z)) * Distance )
+		SpawnPosition.z = location.z
+		TASK.TASK_GO_STRAIGHT_TO_COORD(active_rabbit_animal, SpawnPosition.x, SpawnPosition.y, SpawnPosition.z, 120,10, CamRot.z, 0)
+        end
+	end
+        if util.is_key_down(0x02) then -- 鼠标右键
+            local titlle = "weap_xs_vehicle_weapons"
+            local hashid = "muz_xs_turret_flamethrower_looping"
+            GRAPHICS.USE_PARTICLE_FX_ASSET(titlle)
+            while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(titlle) do
+                STREAMING.REQUEST_NAMED_PTFX_ASSET(titlle)
+               wait(0)
+            end
+            GRAPHICS.START_PARTICLE_FX_LOOPED_ON_ENTITY(hashid, active_rabbit_animal, 0, 0, 0, 0, 0, 0, 1.5, false, false, false)
+            wait(0)
+            else
+            GRAPHICS.REMOVE_PARTICLE_FX_FROM_ENTITY(active_rabbit_animal)
+        end
+        if util.is_key_down(0x45) then -- E键
+            laser_eyes_v6(active_rabbit_animal)
+        end
+        if util.is_key_down(0x10) then -- Shift键
+            PED.SET_PED_MOVE_RATE_OVERRIDE(active_rabbit_animal, 4)
+        end
+        if util.is_key_down(0x20) then -- 空格键
+            animal_pos = CAM.GET_GAMEPLAY_CAM_ROT(0)
+            ENTITY.SET_ENTITY_ROTATION(active_rabbit_animal, animal_pos.x, animal_pos.y, animal_pos.z, 1, true)
+            local mypos = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(active_rabbit_animal, 0, 0.5, 0.1)
+            PED.SET_PED_MOVE_RATE_OVERRIDE(active_rabbit_animal, 2)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(active_rabbit_animal,mypos.x,mypos.y,mypos.z,true, false, false)
+		end
+end)
+
+GTLP(newfunc,"自由穿梭", {}, "WASD-前后左右\n空格/Ctrl-上下", function()
+    Free_travel()
+end, Cleanup_Free_travel)
+
+GTTG(newfunc,"神宠", {}, "空格可以起飞.", function(on)
+    rabbit = on
+    if rabbit then
+        request_model(util.joaat("a_c_rabbit_02"))
+        mypos = players.get_position(players.user()) mypos.z -= 1
+        ped_rabbit = entities.create_ped(26, util.joaat("a_c_rabbit_02"), mypos, ENTITY.GET_ENTITY_HEADING(players.user_ped()))
+        ENTITY.FREEZE_ENTITY_POSITION(ped_rabbit, true)
+        ENTITY.FREEZE_ENTITY_POSITION(players.user_ped(), true)
+        ENTITY.SET_ENTITY_INVINCIBLE(ped_rabbit, true)
+
+        active_rabbit_animal = ped_rabbit
+        local m_z_off = 0
+        local f_z_off = 0
+        if ENTITY.GET_ENTITY_MODEL(players.user_ped()) == 2627665880 then
+            z_off = f_z_off
+        else
+            z_off = m_z_off
+        end
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), active_rabbit_animal,PED.GET_PED_BONE_INDEX(active_rabbit_animal, 24816), 0.2, -0.3, z_off, 0, 270, 90, true, true, true, true, 2,true)
+        request_anim("rcmjosh2")
+        TASK.TASK_PLAY_ANIM(players.user_ped(), "rcmjosh2", "josh_sitting_loop", 8.0, 1, -1, 2,1.0, false, false, false)
+        ENTITY.FREEZE_ENTITY_POSITION(active_rabbit_animal, false)
+        ENTITY.FREEZE_ENTITY_POSITION(players.user_ped(), false)
+    else
+        entities.delete_by_handle(active_rabbit_animal)
+        TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+        ENTITY.DETACH_ENTITY(players.user_ped())
+        wait()
+    end
+end)
+
 GTLP(newfunc,"鲸鱼枪", {""}, "", function()
     Whale_gun()
 end)
+
+feiying = GTTG(newfunc,"飞鹰", {}, "", function(fy)
+    laoying(fy)  
+end)
+feiying.visible = false
 
 GTLP(newfunc,"visible_func", {"action_bo"}, "", activate_laser_eyes, deactivate_laser_eyes).visible = false
 
@@ -2780,6 +3112,7 @@ GTTG(newfunc,"邪魔之眼", {}, "按右键开启激光眼,如果开启激光眼
         menu.trigger_commands("animleanarmscrossed")
         menu.trigger_commands("action_bo on")
         menu.trigger_commands("levitate on")
+        menu.trigger_command(feiying, "on")
         local bones_list = {0x83c, 0x512d, 0xffa, 0xfa11, 0xb3fe, 0x3fcf}
         for _, bid in ipairs(bones_list) do
             request_ptfx_asset("scr_bike_adversary")
@@ -2798,60 +3131,68 @@ GTTG(newfunc,"邪魔之眼", {}, "按右键开启激光眼,如果开启激光眼
         local app2 = menu.ref_by_path("Self>Appearance>Animations>Looped Animations")
         menu.trigger_command(app, "off")
         menu.trigger_command(app2, "off")
+        menu.trigger_command(feiying, "off")
         GRAPHICS.REMOVE_PARTICLE_FX_FROM_ENTITY(players.user_ped())
     end
 end)
 
-GTTG(newfunc,"听话的锤子", {}, "按右键丢出,关闭删除", function(on)
-    if on then
-        local function create_objects()
-            request_model(1262355818)
-            request_model(598253792)
-            local huojian = entities.create_object(1262355818, players.get_position(players.user()))
-            local yuanqiu = entities.create_object(598253792, players.get_position(players.user()))
-            ENTITY.ATTACH_ENTITY_TO_ENTITY(huojian, yuanqiu, 0, 0, 0, 0, 0, 0, 0, true, false, false, true, 0, true)
-            ENTITY.ATTACH_ENTITY_TO_ENTITY(yuanqiu, players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), 28422), 0, 5, 0, 0, -90, 0, true, true, true, true, 0, true)
-            return huojian, yuanqiu
-        end
-        local huojian, yuanqiu = create_objects()
-        WEAPON.GIVE_WEAPON_TO_PED(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), -1810795771, 15, true, true)
-        WEAPON.SET_PED_CURRENT_WEAPON_VISIBLE(players.user_ped(), not on, false, false, false)
-        while on do 
-            wait()
-            if util.is_key_down(0x02) then
-                ENTITY.DETACH_ENTITY(yuanqiu)
-                ENTITY.SET_ENTITY_MAX_SPEED(yuanqiu, 100.0)
-                local c = players.get_position(players.user())
-                local dir = CAM.GET_GAMEPLAY_CAM_ROT(0)
-                local dirVec = v3.toDir(dir)
-                for i = 3, 41, 3 do
-                    ENTITY.APPLY_FORCE_TO_ENTITY(yuanqiu, 1, dirVec.x + 8, dirVec.y + 2, dirVec.z - 5, 10.0, 10.0, 100.0, 10000.0, true, false, true, false, true)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(yuanqiu, 5, 200.0000001, 8207.0, 89207.8207, 10.0, 10.0, 100.0, 10000.0, true, false, true, false, true)
+touzhi = false
+GTTG(newfunc, "听话的锤子", {}, "按右键丢出,E键收回", function(cz)
+    new_cz = cz
+        if new_cz then
+            local function create_objects()
+                request_model(1262355818)
+                request_model(598253792)
+                local huojian = entities.create_object(1262355818, players.get_position(players.user()))
+                local yuanqiu = entities.create_object(598253792, players.get_position(players.user()))
+                ENTITY.ATTACH_ENTITY_TO_ENTITY(huojian, yuanqiu, 0, 0, 0, 0, 0, 0, 0, true, false, false, true, 0, true)
+                ENTITY.ATTACH_ENTITY_TO_ENTITY(yuanqiu, players.user_ped(), PED.GET_PED_BONE_INDEX(players.user_ped(), 28422), 0, 5, 0, 0, -90, 0, true, true, true, true, 0, true)
+                return huojian, yuanqiu
+            end
+            local huojian, yuanqiu = create_objects()
+            WEAPON.GIVE_WEAPON_TO_PED(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), -1810795771, 15, true, true)
+            WEAPON.SET_PED_CURRENT_WEAPON_VISIBLE(players.user_ped(), not new_cz, false, false, false)
+            touzhi = true
+            while new_cz do 
+                wait()
+                if util.is_key_down(0x02) and touzhi == true then
+                    ENTITY.DETACH_ENTITY(yuanqiu)
+                    ENTITY.SET_ENTITY_MAX_SPEED(yuanqiu, 100.0)
+                    local c = players.get_position(players.user())
+                    local dir = CAM.GET_GAMEPLAY_CAM_ROT(0)
+                    local dirVec = v3.toDir(dir)
+                    for i = 3, 41, 3 do
+                        ENTITY.APPLY_FORCE_TO_ENTITY(yuanqiu, 1, dirVec.x + 8, dirVec.y + 2, dirVec.z - 5, 10.0, 10.0, 100.0, 10000.0, true, false, true, false, true)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(yuanqiu, 5, 200.0000001, 8207.0, 89207.8207, 10.0, 10.0, 100.0, 10000.0, true, false, true, false, true)
+                    end
+                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+                    ENTITY.SET_ENTITY_NO_COLLISION_ENTITY(yuanqiu, players.user_ped(), false)
+                    request_anim("melee@unarmed@streamed_core")
+                    TASK.TASK_PLAY_ANIM(players.user_ped(), "melee@unarmed@streamed_core", "heavy_punch_a", 8.0, 8.0, -1, 0, 0.3, false, false, false)
+                    touzhi = false
                 end
-                TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
-                ENTITY.SET_ENTITY_NO_COLLISION_ENTITY(yuanqiu, players.user_ped(), false)
-                request_anim("melee@unarmed@streamed_core")
-                TASK.TASK_PLAY_ANIM(players.user_ped(), "melee@unarmed@streamed_core", "heavy_punch_a", 8.0, 8.0, -1, 0, 0.3, false, false, false)
-                wait(2500)
-                WEAPON.REMOVE_WEAPON_FROM_PED(players.user_ped(), -1810795771)
-                ENTITY.SET_ENTITY_AS_MISSION_ENTITY(huojian, false, false)
-                entities.delete_by_handle(huojian)
-                ENTITY.SET_ENTITY_AS_MISSION_ENTITY(yuanqiu, false, false)
-                entities.delete_by_handle(yuanqiu)
-                huojian, yuanqiu = create_objects()
-                WEAPON.GIVE_WEAPON_TO_PED(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), -1810795771, 15, true, true)
-                WEAPON.SET_PED_CURRENT_WEAPON_VISIBLE(players.user_ped(), not on, false, false, false)
+                if util.is_key_down(0x45) and touzhi == false then
+                    touzhi = true
+                    WEAPON.REMOVE_WEAPON_FROM_PED(players.user_ped(), -1810795771)
+                    ENTITY.SET_ENTITY_AS_MISSION_ENTITY(huojian, false, false)
+                    entities.delete_by_handle(huojian)
+                    ENTITY.SET_ENTITY_AS_MISSION_ENTITY(yuanqiu, false, false)
+                    entities.delete_by_handle(yuanqiu)
+                    huojian, yuanqiu = create_objects()
+                    WEAPON.GIVE_WEAPON_TO_PED(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), -1810795771, 15, true, true)
+                    WEAPON.SET_PED_CURRENT_WEAPON_VISIBLE(players.user_ped(), not new_cz, false, false, false)
+                end
+            end
+        else
+            WEAPON.REMOVE_WEAPON_FROM_PED(players.user_ped(), -1810795771)
+            for k, ent in pairs(entities.get_all_objects_as_handles()) do
+                ENTITY.SET_ENTITY_AS_MISSION_ENTITY(ent, false, false)
+                entities.delete_by_handle(ent)
+                wait()
             end
         end
-    else
-        WEAPON.REMOVE_WEAPON_FROM_PED(players.user_ped(), -1810795771)
-        for k, ent in pairs(entities.get_all_objects_as_handles()) do
-            ENTITY.SET_ENTITY_AS_MISSION_ENTITY(ent, false, false)
-            entities.delete_by_handle(ent)
-            wait()
-        end
-    end
-end)
+        new_cz = false
+    end)
 
 GTTG(newfunc,"珠光护手", {}, "鼠标右键开启暴力伤害.", function(gt)
     gtlv = gt
@@ -14686,6 +15027,452 @@ end
 ---@param context string
 ---@return fun
 
+deer_animal = 0
+ttdd = false
+
+util.create_tick_handler(function()
+    if deer_animal ~= 0 and ttdd then
+        if util.is_key_down(0x57) then -- W键
+            ENTITY.DETACH_ENTITY(players.user_ped(), true, true)
+            ENTITY.DETACH_ENTITY(deerent, true, true)
+
+            local locationpos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+            local CamRot = CAM.GET_GAMEPLAY_CAM_ROT(2)
+            local Distance = 5
+            local Spawn_Position = locationpos
+            Spawn_Position.x = locationpos.x - (math.sin(math.rad(CamRot.z)) * Distance)
+            Spawn_Position.y = locationpos.y + (math.cos(math.rad(CamRot.z)) * Distance)
+            Spawn_Position.z = locationpos.z
+
+            -- 获取地面高度
+            local found, ground_z = util.get_ground_z(Spawn_Position.x, Spawn_Position.y, Spawn_Position.z)
+            if found then
+                Spawn_Position.z = ground_z
+            end
+
+            TASK.TASK_GO_STRAIGHT_TO_COORD(deer_animal, Spawn_Position.x, Spawn_Position.y, Spawn_Position.z, 2.0, 20000, CamRot.z, 0.5)
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(vehent, deerent, 0, -0.5, 0.5, 1.2, 50, 0, 90, false, false, false, false, 0, true)
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), vehent, 0, -0.45, 0, 0.7, -30, 0, 180, false, false, false, true, 0, true)
+            if util.is_key_down(0x10) then -- Shift键
+                PED.SET_PED_MOVE_RATE_OVERRIDE(deer_animal, 3)
+            end
+        end
+    end
+end)
+
+GTTG(funfeatures_veh,"普通鹿车", {}, "W前进,Shift加速+空格起飞", function(td)
+    ttdd = td
+    if ttdd then
+        local coords = players.get_position(players.user())
+        local model = util.joaat('prop_old_farm_01')
+        local deer = util.joaat("a_c_deer")
+        local para = util.joaat("prop_beach_parasol_07")
+        local master = util.joaat("ch_prop_master_09a")
+        request_model(model)
+        request_model(deer)
+        request_model(para)
+        request_model(master)
+        local location = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        local forward_vector = ENTITY.GET_ENTITY_FORWARD_VECTOR(players.user_ped())
+
+        local spawn_x = location.x + forward_vector.x * 2
+        local spawn_y = location.y + forward_vector.y * 2
+        local spawn_z = location.z
+
+        -- 获取地面高度
+        local found, ground_z = util.get_ground_z(spawn_x, spawn_y, spawn_z)
+        if found then
+            spawn_z = ground_z
+        end
+
+        deerent = PED.CREATE_PED(26, deer, spawn_x, spawn_y, spawn_z, -25, true, false)
+        vehent = OBJECT.CREATE_OBJECT(model, spawn_x, spawn_y, spawn_z, true, true, false)
+        parasol = entities.create_object(para, location)
+        masterent = entities.create_object(master, location)
+
+        ENTITY.SET_ENTITY_INVINCIBLE(deerent, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(parasol, vehent, 0, -0.45, 0.25, 0.3, 20, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehent, deerent, 0, -0.5, 0.5, 1.2, 45, 0, 90, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), vehent, 0, -0.45, 0, 0.7, -30, 0, 180, false, false, false, true, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(masterent, parasol, 0, 0, 0, 2.05, 0, 0, 0, false, false, false, false, 0, true)
+
+
+        request_anim("amb@lo_res_idles@")
+        TASK.TASK_PLAY_ANIM(players.user_ped(), "amb@lo_res_idles@", "generic_seating_lo_res_base", 8.0, 8.0, -1, 1, 0.3, false, false, false)
+
+        local ropePos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        ropePos.x = ropePos.x - 0.25
+        ropePos.y = ropePos.y - 0.25
+        ropePos.z = ropePos.z + 0.18
+        local ropePos1 = ENTITY.GET_ENTITY_COORDS(deerent)
+
+        local newRope = PHYSICS.ADD_ROPE(ropePos.x, ropePos.y, ropePos.z, 0, 0, 0, 2, 1, 10, 10, 10, false, false, false, 1.0, false, 0)
+
+        local distance = v3.distance(ropePos1, ropePos)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(newRope, players.user_ped(), deerent, ropePos.x, ropePos.y, ropePos.z, ropePos1.x, ropePos1.y, ropePos1.z, distance, 0, 0, "Center", "Center")
+
+        local ropePoss = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        ropePoss.x = ropePoss.x + 0.05
+        ropePoss.y = ropePoss.y - 0.25
+        ropePoss.z = ropePoss.z + 0.18
+        local ropePoss1 = ENTITY.GET_ENTITY_COORDS(deerent)
+
+        local newRopes = PHYSICS.ADD_ROPE(ropePoss.x, ropePoss.y, ropePoss.z, 0, 0, 0, 2, 2, 10, 10, 10, false, false, false, 1.0, false, 0)
+
+        local distances = v3.distance(ropePoss, ropePoss1)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(newRopes, players.user_ped(), deerent, ropePoss.x, ropePoss.y, ropePoss.z, ropePoss1.x, ropePoss1.y, ropePoss1.z, distances, 0, 0, "Center", "Center")
+        deer_animal = deerent
+    else
+        local temp = memory.alloc(4)
+        for i = 0, 100 do
+            memory.write_int(temp, i)
+            PHYSICS.DELETE_ROPE(temp)
+        end
+        TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+        ENTITY.DETACH_ENTITY(deerent, true, true)
+        ENTITY.DETACH_ENTITY(vehent, true, true)
+        ENTITY.DETACH_ENTITY(parasol, true, true)
+        ENTITY.DETACH_ENTITY(masterent, true, true)
+        entities.delete_by_handle(deerent)
+        entities.delete_by_handle(vehent)
+        entities.delete_by_handle(parasol)
+        entities.delete_by_handle(masterent)
+        deer_animal = 0
+    end
+end)
+
+GTTG(funfeatures_veh,"圣诞鹿车", {}, "W前进,Shift加速+空格起飞", function(td)
+    ttdd = td
+    if ttdd then
+        local coords = players.get_position(players.user())
+        local model = util.joaat('prop_old_farm_01')
+        local deer = util.joaat("a_c_deer")
+        --local para = util.joaat("prop_beach_parasol_07")
+        local master = util.joaat("ch_prop_master_09a")
+        local test = 238789712
+        request_model(model)
+        request_model(deer)
+        --request_model(para)
+        request_model(master)
+        local location = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        local forward_vector = ENTITY.GET_ENTITY_FORWARD_VECTOR(players.user_ped())
+
+        local spawn_x = location.x + forward_vector.x * 2
+        local spawn_y = location.y + forward_vector.y * 2
+        local spawn_z = location.z
+
+        local found, ground_z = util.get_ground_z(spawn_x, spawn_y, spawn_z)
+        if found then
+            spawn_z = ground_z
+        end
+
+        deerent = PED.CREATE_PED(26, deer, spawn_x, spawn_y, spawn_z, -25, true, false)
+        vehent = OBJECT.CREATE_OBJECT(model, spawn_x, spawn_y, spawn_z, true, true, false)
+        --parasol = entities.create_object(para, location)
+        masterent = entities.create_object(master, location)
+        testent = entities.create_object(test, location)
+
+        ENTITY.SET_ENTITY_INVINCIBLE(deerent, true)
+        --ENTITY.ATTACH_ENTITY_TO_ENTITY(parasol, vehent, 0, -0.45, 0.25, 0.3, 20, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehent, deerent, 0, -0.5, 0.5, 1.2, 45, 0, 90, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), vehent, 0, -0.45, 0, 0.7, -30, 0, 180, false, false, false, true, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(testent, vehent, 0, -0.3, 0.2, 0.5, 0, -30, 90, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(masterent, testent, 0, 0, 0, 2.05, 0, 0, 0, false, false, false, false, 0, true)
+
+        request_anim("amb@lo_res_idles@")
+        TASK.TASK_PLAY_ANIM(players.user_ped(), "amb@lo_res_idles@", "generic_seating_lo_res_base", 8.0, 8.0, -1, 1, 0.3, false, false, false)
+
+        local ropePos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        ropePos.x = ropePos.x - 0.25
+        ropePos.y = ropePos.y - 0.25
+        ropePos.z = ropePos.z + 0.18
+        local ropePos1 = ENTITY.GET_ENTITY_COORDS(deerent)
+
+        local newRope = PHYSICS.ADD_ROPE(ropePos.x, ropePos.y, ropePos.z, 0, 0, 0, 1, 1, 10, 10, 10, true, true, true, 1.0, false, 0)
+
+        local distance = v3.distance(ropePos1, ropePos)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(newRope, players.user_ped(), deerent, ropePos.x, ropePos.y, ropePos.z, ropePos1.x, ropePos1.y, ropePos1.z, distance, 0, 0, "Center", "Center")
+
+        local ropePoss = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        ropePoss.x = ropePoss.x + 0.05
+        ropePoss.y = ropePoss.y - 0.25
+        ropePoss.z = ropePoss.z + 0.18
+        local ropePoss1 = ENTITY.GET_ENTITY_COORDS(deerent)
+
+        local newRopes = PHYSICS.ADD_ROPE(ropePoss.x, ropePoss.y, ropePoss.z, 0, 0, 0, 1, 1, 10, 10, 10, true, true, true, 1.0, false, 0)
+
+        local distances = v3.distance(ropePoss, ropePoss1)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(newRopes, players.user_ped(), deerent, ropePoss.x, ropePoss.y, ropePoss.z, ropePoss1.x, ropePoss1.y, ropePoss1.z, distances, 0, 0, "Center", "Center")
+        deer_animal = deerent
+    else
+        local temp = memory.alloc(4)
+        for i = 0, 100 do
+            memory.write_int(temp, i)
+            PHYSICS.DELETE_ROPE(temp)
+        end
+        TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+        ENTITY.DETACH_ENTITY(deerent, true, true)
+        ENTITY.DETACH_ENTITY(vehent, true, true)
+        --ENTITY.DETACH_ENTITY(parasol, true, true)
+        ENTITY.DETACH_ENTITY(masterent, true, true)
+        ENTITY.DETACH_ENTITY(testent, true, true)
+        entities.delete_by_handle(deerent)
+        entities.delete_by_handle(vehent)
+        --entities.delete_by_handle(parasol)
+        entities.delete_by_handle(masterent)
+        entities.delete_by_handle(testent)
+        deer_animal = 0
+    end
+end)
+
+util.create_tick_handler(function()
+    if deer_animal ~= 0 and ttdd then
+        if util.is_key_down(0x57) then -- W键
+            ENTITY.DETACH_ENTITY(players.user_ped(), true, true)
+            ENTITY.DETACH_ENTITY(deerent, true, true)
+
+            local locationpos = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+            local CamRot = CAM.GET_GAMEPLAY_CAM_ROT(2)
+            local Distance = 5
+            local Spawn_Position = locationpos
+            Spawn_Position.x = locationpos.x - (math.sin(math.rad(CamRot.z)) * Distance)
+            Spawn_Position.y = locationpos.y + (math.cos(math.rad(CamRot.z)) * Distance)
+            Spawn_Position.z = locationpos.z
+
+            local found, ground_z = util.get_ground_z(Spawn_Position.x, Spawn_Position.y, Spawn_Position.z)
+            if found then
+                Spawn_Position.z = ground_z
+            end
+
+            TASK.TASK_GO_STRAIGHT_TO_COORD(deer_animal, Spawn_Position.x, Spawn_Position.y, Spawn_Position.z, 2.0, 20000, CamRot.z, 0.5)
+            request_ptfx_asset("scr_rcbarry1")
+            GRAPHICS.USE_PARTICLE_FX_ASSET("scr_rcbarry1")
+            GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(1, 0, 0)
+            GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY("scr_alien_impact_bul", vehent, 0.3, 0.0, 0,0.0, 0.0, 0.0, 1, false, false, false)
+
+            request_ptfx_asset("scr_rcbarry1")
+            GRAPHICS.USE_PARTICLE_FX_ASSET("scr_rcbarry1")
+            GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(1, 0, 0)
+            GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY("scr_alien_impact_bul", vehent, -1.3, 0.0, 0,0.0, 0.0, 0.0, 1, false, false, false)
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(vehent, deerent, 0, -0.5, 0.5, 1.2, 50, 0, 90, false, false, false, false, 0, true)
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), vehent, 0, -0.45, 0, 0.7, -30, 0, 180, false, false, false, true, 0, true)
+            if util.is_key_down(0x10) then -- Shift键
+                PED.SET_PED_MOVE_RATE_OVERRIDE(deer_animal, 3)
+            end
+            if util.is_key_down(0x20) then -- 空格键
+                deer_animal_pos = CAM.GET_GAMEPLAY_CAM_ROT(0)
+                ENTITY.SET_ENTITY_ROTATION(deer_animal, deer_animal_pos.x, deer_animal_pos.y, deer_animal_pos.z, 1, true)
+                local deerpos = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(deer_animal, 0, 0.5, 0.1)
+                PED.SET_PED_MOVE_RATE_OVERRIDE(deer_animal, 2)
+                ENTITY.SET_ENTITY_COORDS_NO_OFFSET(deer_animal,deerpos.x,deerpos.y,deerpos.z,true, false, false)
+		    end
+        end
+    end
+end)
+
+GTTG(funfeatures_veh, "老弱病残车", {}, "", function(enabled)
+    if enabled then
+        local playerPed = players.user_ped()
+        local playerCoords = players.get_position(players.user()) 
+        playerCoords.z -= 0.5
+        request_model(1262298127)
+        request_model(util.joaat("s_m_m_scientist_01"))
+        pedent = CreatePed(-1, util.joaat("s_m_m_scientist_01"), playerCoords, 0)
+        Entity = entities.create_object(1262298127, playerCoords, ENTITY.GET_ENTITY_HEADING(playerPed))
+        ENTITY.SET_ENTITY_INVINCIBLE(pedent, true)
+        request_anim("amb@lo_res_idles@")
+        TASK.TASK_PLAY_ANIM(players.user_ped(), "amb@lo_res_idles@", "generic_seating_lo_res_base", 8.0, 8.0, -1, 1, 0.3, false, false, false)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(playerPed, Entity, 0, 0, 0.1, 0.1, 0, 0, 180, false, false, false, false, 0, true)
+        request_anim("missfinale_c2ig_11")
+        TASK.TASK_PLAY_ANIM(pedent, "missfinale_c2ig_11", "pushcar_offcliff_f", 8.0, 8.0, -1, 1, 0.3, false, false, false)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(pedent, Entity, 0, 0, 1, 0.52, 0, 0, 180, false, false, false, false, 0, true)
+        local normalSpeed = 0.05
+        local speed = normalSpeed
+        local speedIncrease = 0.2
+        local lastHeading = ENTITY.GET_ENTITY_HEADING(Entity)
+        local function get_ground_z(x, y)
+            local success, groundZ = util.get_ground_z(x, y, 1000.0)
+            return success and groundZ or 0
+        end
+        local groundZ = get_ground_z(playerCoords.x, playerCoords.y)
+        util.create_tick_handler(function()
+            if util.is_key_down(0x10) then 
+                speed = normalSpeed + speedIncrease
+            else
+                speed = normalSpeed 
+            end
+            local camRot = CAM.GET_GAMEPLAY_CAM_ROT(0)
+            local heading = camRot.z + 180
+            local headingRad = math.rad(heading)
+            local forwardVec = {
+                x = -math.sin(headingRad),
+                y = math.cos(headingRad),
+                z = 0
+            }
+            local currentPos = ENTITY.GET_ENTITY_COORDS(Entity)
+            local newPos = {x = currentPos.x, y = currentPos.y, z = groundZ}
+            local czPos = {z = currentPos.z}
+            if util.is_key_down(0x57) then 
+                newPos.x = currentPos.x - forwardVec.x * speed
+                newPos.y = currentPos.y - forwardVec.y * speed
+                lastHeading = heading  
+            elseif util.is_key_down(0x53) then 
+                newPos.x = currentPos.x + forwardVec.x * speed
+                newPos.y = currentPos.y + forwardVec.y * speed
+                lastHeading = heading 
+            end
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(Entity, newPos.x, newPos.y, groundZ, false, false, false)
+            ENTITY.SET_ENTITY_HEADING(Entity, lastHeading)
+        end)
+    else
+        TASK.CLEAR_PED_TASKS_IMMEDIATELY(players.user_ped())
+        entities.delete_by_handle(Entity)
+        entities.delete_by_handle(pedent)
+    end
+end)
+
+GTTG(funfeatures_veh, "遥控RC", {}, "按G切换武器类型", function(on_click)
+    if on_click then
+        CAM.DO_SCREEN_FADE_OUT(800)
+        wait(1500)
+        CAM.DO_SCREEN_FADE_IN(800)
+        local ped_hash = util.joaat("minitank")
+        self_Coords = players.get_position(players.user())
+        request_model(ped_hash)
+        toveh = entities.create_vehicle(ped_hash, self_Coords, ENTITY.GET_ENTITY_HEADING(players.user_ped()))
+        PED.SET_PED_INTO_VEHICLE(players.user_ped(), toveh, -1)
+        ENTITY.SET_ENTITY_INVINCIBLE(toveh, true)
+        local mod_state = -1
+        util.create_tick_handler(function()
+            if PAD.IS_CONTROL_JUST_PRESSED(0, 47) then
+                if mod_state == -1 then
+                    mod_state = 0
+                elseif mod_state == 0 then
+                    mod_state = 1
+                else
+                    mod_state = -1
+                end
+                VEHICLE.SET_VEHICLE_MOD(toveh, 10, mod_state)
+            end
+            return true
+        end)
+    else
+        CAM.DO_SCREEN_FADE_OUT(800)
+        wait(1000)
+        CAM.DO_SCREEN_FADE_IN(800)
+        entities.delete_by_handle(toveh)
+        ENTITY.SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), self_Coords.x, self_Coords.y, self_Coords.z, false,
+            false, false)
+    end
+end)
+
+
+GTTG(funfeatures_veh,"拉力猫", {}, "", function(on_click)
+    if on_click then
+        local pPed = players.user_ped()
+        local My_Coords = players.get_position(players.user())
+        local model_hash = util.joaat('v_res_m_h_sofa_sml')
+        local airtug_hash = util.joaat("airtug")
+        local accat_hash = util.joaat("a_c_cat_01")
+        local RoosterMcCraw_hash = util.joaat("IG_RoosterMcCraw")
+        local wreckedcart_hash = util.joaat("prop_cartwheel_01")
+        local num8_hash = util.joaat("prop_mp_num_8")
+        local ped_hash = 0x9CF26183
+        request_model(model_hash)
+        request_model(airtug_hash)
+        request_model(accat_hash)
+        request_model(RoosterMcCraw_hash)
+        request_model(wreckedcart_hash)
+        request_model(num8_hash)
+        request_model(ped_hash)
+        RoosterMcCraw = entities.create_object(RoosterMcCraw_hash, My_Coords)
+        RoosterMcCraw0 = entities.create_object(RoosterMcCraw_hash, My_Coords)
+        farm = entities.create_object(model_hash, My_Coords)
+        wreckedcart = entities.create_object(wreckedcart_hash, My_Coords)
+        wreckedcart0 = entities.create_object(wreckedcart_hash, My_Coords)
+        num8 = entities.create_object(num8_hash, My_Coords)
+        num88 = entities.create_object(num8_hash, My_Coords)
+        num888 = entities.create_object(num8_hash, My_Coords)
+        airtug = entities.create_vehicle(airtug_hash, My_Coords, ENTITY.GET_ENTITY_HEADING(pPed))
+        accat = entities.create_ped(26, accat_hash, My_Coords, 0)
+        accat0 = entities.create_ped(26, accat_hash, My_Coords, 0)
+        meimei = entities.create_ped(26, ped_hash, My_Coords, 0)
+
+        PED.SET_PED_INTO_VEHICLE(pPed, airtug, -1)
+        ENTITY.SET_ENTITY_VISIBLE(airtug, false)
+        ENTITY.SET_ENTITY_VISIBLE(pPed, true)
+        ENTITY.SET_ENTITY_COLLISION(RoosterMcCraw, false, false)
+        ENTITY.SET_ENTITY_COLLISION(farm, false, false)
+        ENTITY.SET_ENTITY_INVINCIBLE(accat, true)
+        ENTITY.SET_ENTITY_INVINCIBLE(accat0, true)
+        ENTITY.SET_ENTITY_INVINCIBLE(airtug, true)
+        ENTITY.SET_ENTITY_INVINCIBLE(meimei, true)
+
+        request_anim("amb@lo_res_idles@")
+        TASK.TASK_PLAY_ANIM(meimei, "amb@lo_res_idles@", "generic_seating_lo_res_base", 8.0, 8.0, -1, 1, 0.3, false, false, false)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(meimei, farm, 0, 0.4, 0, 0.45, 0, 0, 180, false, false, false, false, 0, true)
+
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(farm, airtug, 0, -0.45, -0.65, 0.05, 0, 0, 180, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(accat, airtug, 0, 0.2, 3, -0.2, 0, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(accat0, airtug, 0, -0.8, 3, -0.2, 0, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(RoosterMcCraw, pPed, PED.GET_PED_BONE_INDEX(pPed, 0xdead), 0.15, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(RoosterMcCraw0, pPed, PED.GET_PED_BONE_INDEX(pPed, 0x49d9), 0.15, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(wreckedcart, farm, 0, -1.3, 0, 0.1, 0, 90, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(wreckedcart0, farm, 0, 1.2, 0, 0.1, 0, 90, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(num8, farm, 0, 0, 0.5, 0.5, 0, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(num88, farm, 0, 0.75, 0.5, 0.5, 0, 0, 0, false, false, false, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(num888, farm, 0, -0.75, 0.5, 0.5, 0, 0, 0, false, false, false, false, 0, true)
+        local accat_coords = ENTITY.GET_ENTITY_COORDS(accat, true)
+        local RoosterMcCraw_coords = ENTITY.GET_ENTITY_COORDS(RoosterMcCraw, true)
+
+        local Distance = v3.distance(RoosterMcCraw_coords, accat_coords)
+        local rope = PHYSICS.ADD_ROPE(accat_coords.x, accat_coords.y, accat_coords.z, 0, 0, 0, Distance, 1, 10, 10, 10, false, false, false, 1.0, false, 0)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(rope, accat, RoosterMcCraw, accat_coords.x, accat_coords.y, accat_coords.z, RoosterMcCraw_coords.x, RoosterMcCraw_coords.y, RoosterMcCraw_coords.z, Distance, false, false, "Center", "Center")
+
+        local accat_coords0 = ENTITY.GET_ENTITY_COORDS(accat0, true)
+        local RoosterMcCraw_coords0 = ENTITY.GET_ENTITY_COORDS(RoosterMcCraw0, true)
+
+        local Distance0 = v3.distance(RoosterMcCraw_coords0, accat_coords0)
+        local rope0 = PHYSICS.ADD_ROPE(accat_coords0.x, accat_coords0.y, accat_coords0.z, 0, 0, 0, Distance0, 1, 10, 10, 10, false, false, false, 1.0, false, 0)
+        PHYSICS.ATTACH_ENTITIES_TO_ROPE(rope0, accat0, RoosterMcCraw0, accat_coords0.x, accat_coords0.y, accat_coords0.z, RoosterMcCraw_coords0.x, RoosterMcCraw_coords0.y, RoosterMcCraw_coords0.z, Distance0, false, false, "Center", "Center")
+
+        util.create_tick_handler(function()
+            if util.is_key_down(0x57) then -- W键
+                local side_move = PAD.GET_CONTROL_NORMAL(146, 146)
+                local fwd = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(accat, side_move * 10.0, 8.0, 0.0)
+                TASK.TASK_LOOK_AT_COORD(accat, fwd.x, fwd.y, fwd.z, 0, 0, 2)
+                TASK.TASK_GO_STRAIGHT_TO_COORD(accat, fwd.x, fwd.y, fwd.z, 20.0, -1, ENTITY.GET_ENTITY_HEADING(accat), 0.5)
+                local fwd0 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(accat0, side_move * 10.0, 8.0, 0.0)
+                TASK.TASK_LOOK_AT_COORD(accat0, fwd0.x, fwd0.y, fwd0.z, 0, 0, 2)
+                TASK.TASK_GO_STRAIGHT_TO_COORD(accat0, fwd0.x, fwd0.y, fwd0.z, 20.0, -1, ENTITY.GET_ENTITY_HEADING(accat0), 0.5)
+            end
+
+            if util.is_key_down(0x20) then -- 空格键停止
+                TASK.CLEAR_PED_TASKS(accat)
+                TASK.CLEAR_PED_TASKS(accat0)
+            end
+        end)
+    else
+        entities.delete_by_handle(farm)
+        entities.delete_by_handle(airtug)
+        entities.delete_by_handle(accat)
+        entities.delete_by_handle(accat0)
+        entities.delete_by_handle(RoosterMcCraw)
+        entities.delete_by_handle(RoosterMcCraw0)
+        entities.delete_by_handle(wreckedcart)
+        entities.delete_by_handle(wreckedcart0)
+        entities.delete_by_handle(num8)
+        entities.delete_by_handle(num88)
+        entities.delete_by_handle(num888)
+        entities.delete_by_handle(meimei)
+        mp = memory.alloc(4)
+        for i = 0, 100 do
+            memory.write_int(mp, i)
+            PHYSICS.DELETE_ROPE(mp)
+        end
+    end
+end)
+
 GTAC(funfeatures_veh,"碾碎载具", {}, "乞丐版载具", function()
     local playerPed = PLAYER.GET_PLAYER_PED(players.user())
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(playerPed, true)
@@ -22590,7 +23377,7 @@ GTH(gt_web, "DLHPJY", "https://fzgw.7egg.cn/", "留言:暂无")
 GTH(gt_web, "KexiaoLove", "http://kexiaonolove.asia/", "留言:暂无")
 
 zhujixianshi = GT(other_options, "UI显示选项", {}, "在这里修改各种显示在屏幕中的元素")
-zanzhuzx = GT(other_options, "GTLua 团队")
+zanzhuzx = GT(other_options, "GTLua 创作团队")
 
 baocunanjain = GTTG(zhujixianshi, "[按F8保存设置]", {""}, "", function(f)
     gt = f
@@ -24352,18 +25139,18 @@ GTLP(zanzhuzx, "致谢名单", {""}, "GRANDTOURING董事会", function()
     draw_string(string.format("~italic~~bold~~q~ ~q~[丢丢] ~w~[02] ~y~[xion] ~r~[rudan]"), 0.250,0.520,1.5,5)
 end)]]
 
-GTD(zanzhuzx, "GTLua Team", {}, "", function () end)
+GTD(zanzhuzx, "GTLua 创作团队", {}, "", function () end)
 GTS(zanzhuzx, "GT[Creator]", {}, "", {"2022年加入", "GTLua 创始人"}, function()end)
 GTS(zanzhuzx, "Respect[Developer]", {}, "", {"2022年加入", "GTLua 开发者"}, function()end)
-GTS(zanzhuzx, "Mag[Website]", {}, "", {"2024年加入",  "GTLua 运营者", "GTLua 网页设计","极夜科技 创始人"},function()end)
+GTS(zanzhuzx, "Mag[Design]", {}, "", {"2024年加入",  "GTLua 运营者", "GTLua 网页设计","Mxr群管 创始人"},function()end)
 GTS(zanzhuzx, "12[Arting]",{},"",{"2022年加入", "GTLua 美工设计"},function()end)
 GTS(zanzhuzx, "西木[Function]",{},"",{"2022年加入", "GTLua 功能支持"},function()end)
 GTS(zanzhuzx, "丢丢[Plan]",{},"",{"2022年加入", "GTLua 功能策划"},function()end)
 GTS(zanzhuzx, "船船[Admin]",{},"",{"2023年加入", "GTLua 管理员"},function()end)
-GTS(zanzhuzx, "湾湾[WER]",{},"",{"2023年加入", "GTLua 管理员"}, function()end)
+GTS(zanzhuzx, "湾湾[Asset]",{},"",{"2023年加入", "GTLua 管理员"}, function()end)
 GTS(zanzhuzx, "草莓酱[Admin]",{},"",{"2023年加入", "GTLua 代表人"},function()end)
 GTS(zanzhuzx, "7SkyK1ng[Shit Base]",{},"",{"2023年加入", "Shit Base"},function()end)
-GTS(zanzhuzx, "Rebound[Menu]",{},"",{"回弹菜单官方", "为GTLua提供帮助"},function()end)
+--GTS(zanzhuzx, "Rebound[Menu]",{},"",{"回弹菜单官方", "为GTLua提供帮助"},function()end)
 GTAC(zanzhuzx, "...更多", {}, "", function ()
     gtoast("联系我们加入GTLua团队\n了解GTLua如何与GTA相得益彰\n了解我们的名字,和我们的故事\n了解如何与我们一同创造奇迹")
 end)
@@ -24408,13 +25195,12 @@ GTAC(zaxiang, "赌一赌", {}, "我也不知道会发生什么", function()
         ENTITY.APPLY_FORCE_TO_ENTITY(0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false, false)
     end
 end)
-              
+GTH(other_options, "GTVIP六群[加入]", "https://qm.qq.com/q/OW5oPIU1m8")   
 GTH(other_options, "GTVIP一群[满]", "https://jq.qq.com/?_wv=1027&k=wo92Nl0a", "")
 GTH(other_options, "GTVIP二群[满]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=fecyAfmh_yGqElM5ABguu9YIVIuIiNqh&authKey=Nt%2FvK%2B2K6lEnVl3%2Bz3ZyRtoEEXXX%2FpZjLrrgPpvsXVXHsWCS2kKV%2Bir5P1Xg7f6F&noverify=0&group_code=642072208", "")
 GTH(other_options, "GTVIP三群[满]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=oza9NK13Ql0LJDjvFg6x71QKAu5cDFYj&authKey=mKgjAapXxRtPTKUrwoLi%2FX%2FRovM4ufPDjh9nBhnQ6dFACL%2Fa%2Bqu7QkFTd55ipnEO&noverify=0&group_code=651502721", "")
 GTH(other_options, "GTVIP四群[满]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=8qYUvJSLb2BVHZrM5Ztu_EyvZxfO5RvE&authKey=tViPuocQN00a41qIKcrWbk7VeYeJfMFPBOFLfrLx1mZdDnt9UjkHjkpC6DALzMHj&noverify=0&group_code=655413793", "")
-GTH(other_options, "GTVIP五群[加入]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=oaXbT9ji8V5GbTYGAMLyvcWu0wmsL9rY&authKey=nmvivn0c1f1NX7r3HMD7Hzz45LUmab6seEnbpSMTK5ud%2BfJcdYaRX9e43orCIOZV&noverify=0&group_code=933822463")
-GTH(other_options, "GTVIP六群[加入]", "https://qm.qq.com/q/OW5oPIU1m8")
+GTH(other_options, "GTVIP五群[满]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=oaXbT9ji8V5GbTYGAMLyvcWu0wmsL9rY&authKey=nmvivn0c1f1NX7r3HMD7Hzz45LUmab6seEnbpSMTK5ud%2BfJcdYaRX9e43orCIOZV&noverify=0&group_code=933822463")
 GTH(other_options, "GTVIP聊天一群[无法加入]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=s_TXl5bUz7qNHUDHJV9p4gcAsBwqNnmq&authKey=%2FlvMHJriXIPU%2FzftUdGe3nd7JTF9JdwgJ6lfS61V1NzlZRriXxxY9vx14BsgKwJV&noverify=0&group_code=716431566")
 GTH(other_options, "GTVIP聊天二群[立刻加入]", "http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=bVV36LnHp5WtE_b4z0NES6AtML6vWJu3&authKey=Q9azpxnisaisyX%2FAEmEesFC3HK3c6dhpP9JAGEyGSPRkpcYf3%2B03T4BcZ9wz1rdw&noverify=0&group_code=311525640")
 GTH(other_options, "加入Discord", "https://discord.gg/nJjB8FtxdN", "加入Discord服务器\n言论自由免受QQ限制\n服务器中不定时发布福利~\n欢迎您的加入喔:)")
