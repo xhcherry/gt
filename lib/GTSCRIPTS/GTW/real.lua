@@ -1,61 +1,105 @@
 local textnotify={
-    "6",
+    "不要自己有病,还给别人开药方\n中国最强外交官————汪文斌",
+    "见不到光的事情,总有一天会见光\n——崔佛·菲利普",
+    "请尽你所能发光发热",
+    "鱼没有水会死,水没有鱼却会更清澈",
+    "你浪费的今天,是死去的人奢望的明天",
+    "活在当下,享受每一刻",
+    "且视他人之疑目如盏盏鬼火",
+    "不要放弃自己的梦想",
+    "笨蛋才会掉眼泪",
+    "阳光总在风雨后,希望总在绝望中",
+    "成功的秘诀就是坚持到底",
+    "一切都会苦尽甘来",
+    "既然选择了远方,便只顾风雨兼程",
+    "我相信天空不会永远灰暗",
+    "努力是会上瘾的,特别是尝到了甜头后",
+    "生命不息,奋斗不止",
+    "不必纠结于当下,也不必忧虑未来",
+    "把困难当做挑战,把挑战当做机会",
+    "无人喝彩,依然在期待",
+    "请保持一份热爱,奔赴下一场山火",
+    "不要担心失败,只要努力就有收获",
+    "好好学习,天天向上",
+    "不必焦虑别人比你提前拥有",
+    "生活属于每个人自己的感受",
+    "生活不属于任何人的看法",
+    "不要因为一个不满意,就灰心",
+    "人活一生,值得爱的东西很多",
+    "不要放弃对自己的爱护",
+    "接受孤独挫折,接受突如其来的无力感",
+    "生命有裂缝,光才可以照进来",
+    "钻石在被发现之前要经受埋藏与寂寞",
+    "无论天空如何阴霾,太阳一直都在",
+    "加油陌生人,不要放弃",
+    "我走的很慢,但我从不后腿",
+    "愿你以渺小启程,以伟大结束",
+    "热爱和众望终会殊途同归",
+    "请享受无法回避的痛苦",
+    "切莫垂头丧气,你还握有未来",
+    "放弃不难,但坚持一定很酷",
+    "在尘埃落定前奋力一搏",
 }
 
-local name = PLAYER.GET_PLAYER_NAME(players.user())
-function welcomehb()
-    welcome388 = "至臻皇榜 "
-    welcomevip = "近来可好，"
-    welcomestand = "欢迎 "
 
-    for _,id in ipairs(name) do
-        if name == name then
-            return welcome388
+
+        local name = PLAYER.GET_PLAYER_NAME(players.user())
+        function welcomehb()
+            welcome388 = "至臻皇榜 "
+            welcomevip = "近来可好，"
+            welcomestand = "欢迎 "
+
+            for _, id in ipairs(sxid) do
+                if name == id.playeridx then
+                    return welcome388
+                end
+            end
+
+            for _, id in ipairs(spid) do
+                if name == id.playerid then
+                    return welcomevip
+                end
+            end
+
+            return welcomestand
+
         end
-    end
 
-    for _, id in ipairs(spid) do
-        if name == id.playerid then
-            return welcomevip
-        end
-    end
+        random_notify = math.random(1, #textnotify)
 
-    return welcome388
-end
+        welcomet1 = menu.toggle_loop(players_root, "你看不到", {"ucantseeit"}, "", function()
+            if name == "Mag7777V" or name == "Magicswordstar" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "佳佳 驾到")
+            elseif name == "Gods_daxiong" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "明月 驾到")
+            elseif name == "An_owQ" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "安安 驾到")
+            elseif name == "hinrcituqzQZ" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "清歌 驾到")
+            elseif name == "XiaoYuXin_qwq" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "小雨 驾到")
+            elseif name == "chen_you123" then
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. "辰悠 驾到")
+            else
+                notification(textnotify[random_notify] .. "\n" .. welcomehb() .. PLAYER.GET_PLAYER_NAME(players.user()))
+            end
+        end)
 
-random_notify = math.random(1,#textnotify)
+        welcomet2 = menu.toggle_loop(players_root, "你看不到", {"youcantseeit"}, "", function()
+            menu.trigger_commands("ucantseeit on")
+            wait(1000)
+            menu.trigger_commands("ucantseeit off")
+            menu.trigger_commands("youcantseeit off")
+        end)
 
-welcomet1 = menu.toggle_loop(players_root, "你看不到", {"ucantseeit"}, "", function ()
-    if name == "Mag7777V" or name == "Magicswordstar" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."佳佳 驾到")
-    elseif name == "Gods_daxiong" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."明月 驾到")
-    elseif name == "An_owQ" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."安安 驾到")
-    elseif name == "hinrcituqzQZ" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."清歌 驾到")
-    elseif name == "XiaoYuXin_qwq" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."小雨 驾到")
-    elseif name == "chen_you123" then
-        notification(textnotify[random_notify] .. "\n"..welcomehb().."辰悠 驾到")
-    else
-        notification(textnotify[random_notify] .. "\n"..welcomehb()..PLAYER.GET_PLAYER_NAME(players.user()))
-    end
-end)
+        menu.trigger_commands("youcantseeit on")
+        menu.set_visible(welcomet1, false)
+        menu.set_visible(welcomet2, false)
 
-welcomet2 = menu.toggle_loop(players_root, "你看不到", {"youcantseeit"}, "", function ()
-    menu.trigger_commands("ucantseeit on")
-    wait(1000)
-    menu.trigger_commands("ucantseeit off")
-    menu.trigger_commands("youcantseeit off")
-end)
 
-menu.trigger_commands("youcantseeit on")
-menu.set_visible(welcomet1, false)
-menu.set_visible(welcomet2, false)
 
 function realheart()
-notification("")
+    notification("")
 end
 
 local wennuan={
